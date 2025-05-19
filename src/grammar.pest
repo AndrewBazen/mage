@@ -1,0 +1,10 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+program     =  { SOI ~ statement* ~ EOI }
+statement   =  { conjure | incant }
+
+conjure     =  { "conjure" ~ IDENT ~ "=" ~ string }
+incant      =  { "incant" ~ string }
+
+IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
+string      = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
