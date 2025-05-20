@@ -1,1 +1,22 @@
 /target
+**/*.rs.bk
+Cargo.lock
+Cargo.toml.bk
+.DS_Store
+*.swp
+*.swo
+*.tmp
+*.log
+/tests/tmp_*.mage
+# VSCode
+.vscode/
+# JetBrains
+.idea/
+# Windows
+Thumbs.db
+Desktop.ini
+# macOS
+.AppleDouble
+.LSOverride
+# Linux
+*~

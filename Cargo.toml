@@ -6,4 +6,8 @@ edition = "2024"
 [dependencies]
 pest = "2.7"
 pest_derive = "2.7"
+which = "4"
+rustyline = "13"
 
+[lib]
+proc-macro = false

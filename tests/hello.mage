@@ -1,2 +1,5 @@
 conjure name = "Mage"
 incant "Welcome, $name"
+
+evoke "whoami"
+evoke "dir"

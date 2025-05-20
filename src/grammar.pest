@@ -1,10 +1,29 @@
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+NEWLINE = _{ "\r\n" | "\n" | "\r" }
+COMMENT = _{ SINGLE_COMMENT | MULTI_COMMENT }
+SINGLE_COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 
-program     =  { SOI ~ statement* ~ EOI }
-statement   =  { conjure | incant }
+program     =  { SOI ~ (incantation | COMMENT)* ~ EOI }
+incantation   =  { conjure | incant | curse | evoke | if_block | loop_block | enchant | cast }
+
+enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+param_list   = { IDENT ~ ("," ~ IDENT)* }
+
+cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" }
+arg_list     = { value ~ ("," ~ value)* }
+
+if_block    = { "if" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+loop_block  = { "loop" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+condition   = { IDENT ~ comparator ~ value }
+comparator  = { "==" | "!=" }
+value       = { IDENT | string }
 
 conjure     =  { "conjure" ~ IDENT ~ "=" ~ string }
 incant      =  { "incant" ~ string }
+curse       =  { "curse" ~ string }
+evoke       =  { "evoke" ~ string }
 
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
