@@ -175,17 +175,12 @@ For other Neovim configurations, ensure you:
         "else" @keyword
         "loop" @keyword
 
-        ;; Punctuation
-        "(" @punctuation.delimiter
-        ")" @punctuation.delimiter
-        "{" @punctuation.delimiter
-        "}" @punctuation.delimiter
-        ";" @punctuation.delimiter
-        "," @punctuation.delimiter
-
         ;; Literals
         (string) @string
         (number) @number
+
+        ;; Comments
+        (comment) @comment
         ```
      2. If it still crashes, try disabling TreeSitter for Mage files temporarily:
         ```lua
@@ -200,8 +195,44 @@ For other Neovim configurations, ensure you:
         ```
      3. As a last resort, try a minimal parser that does basic tokenization without complex parsing
 
-   - **Recommended solution**: Use the provided workaround file:
-     1. Copy `mage-crash-workaround.lua` to your Neovim config directory
-     2. Add `require('mage-crash-workaround')` to your init.lua
-     3. This provides a toggle command `:MageToggleTreeSitter` to enable/disable TreeSitter for Mage files
-     4. It also sets up a fallback syntax highlighting scheme when TreeSitter is disabled
+11. **Persistent TreeSitter Query Errors**
+    - If you keep seeing errors like `Query error at ... Invalid node type "["` even after fixing the highlights.scm file, try these steps:
+      1. Delete the file completely: `rm queries/highlights.scm`
+      2. Create a new file with minimal captures (keywords, strings, numbers only)
+      3. Clear Neovim's parser cache:
+         ```
+         :TSUninstall mage
+         :lua vim.fn.delete(vim.fn.stdpath("cache") .. "/treesitter/mage", "rf")
+         :TSInstall mage
+         ```
+      4. Try a different language name to avoid cache conflicts:
+         - Rename language from "mage" to "mage2" in:
+           - tree-sitter.json
+           - package.json
+           - binding.gyp
+           - parser.c (tree_sitter_mage -> tree_sitter_mage2)
+           - binding.cc
+         - This forces Neovim to use a completely fresh parser without any cached queries
+
+12. **Plugin Compatibility Issues (blink.cmp)**
+    - If you're seeing errors from plugins like "blink.cmp" with messages about invalid node types, it's likely the plugin is trying to use your TreeSitter grammar for completion or other features
+    - Solutions:
+      1. Disable the plugin for Mage files:
+         ```lua
+         -- In your Neovim config
+         vim.api.nvim_create_autocmd("FileType", {
+           pattern = "mage",
+           callback = function()
+             -- Disable blink.cmp for Mage files
+             if vim.g.loaded_blink_cmp then
+               vim.b.blink_cmp_disable = true
+             end
+           end
+         })
+         ```
+      2. Create a plugin-specific configuration file:
+         - Some plugins look for special configuration files in the TreeSitter grammar
+         - Try creating a file `queries/blink.scm` with minimal content that the plugin can parse
+         - Example: `(identifier) @completion`
+      3. Try the language rename approach outlined in the previous section
+         - This can completely sidestep plugin compatibility issues by using a fresh language name
