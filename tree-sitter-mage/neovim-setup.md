@@ -14,9 +14,10 @@ return {
       local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
       parser_config.mage = {
         install_info = {
-          url = "https://github.com/andrewbazen/mage", -- Replace with the actual repo URL
+          url = "~/projects/mage", -- Local path to Mage repository
           files = {"tree-sitter-mage/src/parser.c"},
           location = "tree-sitter-mage",
+          branch = "main", -- Specify the correct branch name
           requires_generate_from_grammar = false,
           generate_requires_npm = false,
         },
@@ -59,9 +60,10 @@ For other Neovim configurations, ensure you:
    local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
    parser_config.mage = {
      install_info = {
-       url = "https://github.com/andrewbazen/mage", -- Replace with the actual repo URL
+       url = "~/projects/mage", -- Local path to Mage repository
        files = {"tree-sitter-mage/src/parser.c"},
        location = "tree-sitter-mage",
+       branch = "main", -- Specify the correct branch name
      },
      filetype = "mage",
    }
@@ -79,4 +81,30 @@ For other Neovim configurations, ensure you:
 3. Install the parser from within Neovim:
    ```
    :TSInstall mage
-   ``` 
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"pathspec 'master' did not match any file(s) known to git"**
+   - The repository doesn't have a 'master' branch. Make sure to set `branch = "main"` or whatever branch your repository uses in the install_info.
+
+2. **Compilation errors**
+   - Make sure the repository has the following structure:
+     - `src/parser.c` - Generated parser code
+     - `src/tree_sitter/parser.h` - Tree-sitter header
+     - `bindings/node/index.js` - Node.js bindings
+     - `binding.gyp` - Build configuration
+     - `tree-sitter.json` - Tree-sitter configuration with proper metadata
+
+3. **Parser generation issues**
+   - If you're developing the grammar, run these commands to regenerate the parser:
+     ```
+     npm install
+     npx tree-sitter generate
+     ```
+
+4. **Missing files after installation**
+   - Run `:checkhealth nvim-treesitter` in Neovim to check for issues
+   - Make sure all required Node.js packages are installed: `npm install nan` 
