@@ -51,6 +51,30 @@ Mage is a cross-platform, magic-themed scripting language built in Rust. It is d
 ## Cross-Platform Shell Support
 - On Unix: uses `MAGE_SHELL` env var, then `SHELL`, then tries `bash`, `zsh`, `fish`, `sh`.
 - On Windows: uses `cmd`.
+- Override with command-line flag: `--shell powershell`
+- Override in script with directive: `#!shell: powershell`
+- Configure in `.mageconfig` file: `shell=powershell`
+
+## CLI Commands
+
+```
+mage [SCRIPT]               Run a script directly
+mage run <SCRIPT>           Run a script
+mage repl                   Start interactive REPL mode
+mage init                   Create a .mageconfig file
+mage --shell <SHELL>        Override shell for script execution
+mage --help                 Show help information
+```
+
+## Configuration
+Create a `.mageconfig` file in your project directory with:
+```
+# Override default shell
+shell=powershell
+
+# Custom options
+project_name=My Mage Project
+```
 
 ## Example Script
 ```mage
@@ -79,11 +103,15 @@ evoke "echo Hello from the shell!"
     ```
 2. **Run a script:**
     ```sh
-    cargo run -- path/to/script.mage
+    cargo run -- run path/to/script.mage
     ```
-3. **Set a custom shell (optional):**
+3. **Start REPL mode:**
     ```sh
-    MAGE_SHELL=fish cargo run -- path/to/script.mage
+    cargo run -- repl
+    ```
+4. **Override shell:**
+    ```sh
+    cargo run -- run path/to/script.mage --shell powershell
     ```
 
 ## Testing

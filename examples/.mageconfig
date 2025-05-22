@@ -1,0 +1,10 @@
+# Example Mage Configuration File
+
+# Override default shell
+# Uncomment to use a specific shell
+# shell=powershell
+
+# Custom options that can be used in scripts
+project_name=Example Mage Project
+version=1.0.0
+author=Mage User 

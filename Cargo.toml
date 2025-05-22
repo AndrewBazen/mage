@@ -8,6 +8,8 @@ pest = "2.7"
 pest_derive = "2.7"
 which = "4"
 rustyline = "13"
+clap = { version = "4.4", features = ["derive"] }
+dirs-next = "2.0"
 
 [lib]
 proc-macro = false

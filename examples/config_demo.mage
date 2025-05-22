@@ -1,0 +1,27 @@
+#!shell: powershell
+## 
+# This script demonstrates using both:
+# 1. Shell override directive (#!shell:)
+# 2. .mageconfig values (when script is in examples/ dir)
+##
+
+# Output some system info
+incant "📜 Running script with shell override"
+evoke echo "Current shell: $SHELL"
+
+# Access config values if available
+conjure config_file = evoke cat .mageconfig
+
+if config_file {
+    incant "🔮 Found .mageconfig with settings:"
+    evoke cat .mageconfig
+} else {
+    incant "⚠️ No .mageconfig found in current directory"
+    incant "Try creating one with 'mage init'"
+}
+
+# You can run this script with:
+# mage run examples/config_demo.mage
+# 
+# Or override the shell:
+# mage run examples/config_demo.mage --shell bash 
