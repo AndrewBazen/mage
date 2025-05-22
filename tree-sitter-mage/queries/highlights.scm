@@ -10,10 +10,27 @@
 (loop_statement "loop" @keyword)
 
 ;; Operators
-["=" "==" "!=" "<" "<=" ">" ">=" "+" "-" "*" "/"] @operator
+"=" @operator
+"==" @operator
+"!=" @operator
+"<" @operator
+"<=" @operator
+">" @operator
+">=" @operator
+"+" @operator
+"-" @operator
+"*" @operator
+"/" @operator
 
 ;; Punctuation
-["(" ")" "{" "}" "[" "]" "," ";"] @punctuation.delimiter
+"(" @punctuation.delimiter
+")" @punctuation.delimiter
+"{" @punctuation.delimiter
+"}" @punctuation.delimiter
+"[" @punctuation.delimiter
+"]" @punctuation.delimiter
+"," @punctuation.delimiter
+";" @punctuation.delimiter
 
 ;; Variables
 (variable_declaration name: (identifier) @variable.declaration)

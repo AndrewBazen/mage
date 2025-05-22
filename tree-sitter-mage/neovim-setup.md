@@ -15,7 +15,7 @@ return {
       parser_config.mage = {
         install_info = {
           url = "~/projects/mage", -- Local path to Mage repository
-          files = {"tree-sitter-mage/src/parser.c"},
+          files = {"src/parser.c"}, -- Corrected path to parser.c
           location = "tree-sitter-mage",
           branch = "main", -- Specify the correct branch name
           requires_generate_from_grammar = false,
@@ -61,7 +61,7 @@ For other Neovim configurations, ensure you:
    parser_config.mage = {
      install_info = {
        url = "~/projects/mage", -- Local path to Mage repository
-       files = {"tree-sitter-mage/src/parser.c"},
+       files = {"src/parser.c"}, -- Corrected path to parser.c
        location = "tree-sitter-mage",
        branch = "main", -- Specify the correct branch name
      },
@@ -107,4 +107,8 @@ For other Neovim configurations, ensure you:
 
 4. **Missing files after installation**
    - Run `:checkhealth nvim-treesitter` in Neovim to check for issues
-   - Make sure all required Node.js packages are installed: `npm install nan` 
+   - Make sure all required Node.js packages are installed: `npm install nan`
+
+5. **"No such file or directory" during compilation**
+   - Double-check the `files` array in your parser configuration. The paths should be relative to the repository root, not to the tree-sitter-mage directory.
+   - If using a local repository, ensure the absolute path is correct. 
