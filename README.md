@@ -47,6 +47,10 @@ Mage is a cross-platform, magic-themed scripting language built in Rust. It is d
     ```
     cast greet("Mage")
     ```
+- **Syntax Highlighting:**
+  - Tree-sitter grammar for precise syntax highlighting
+  - Colored REPL with syntax highlighting
+  - Export highlighted code to HTML
 
 ## Cross-Platform Shell Support
 - On Unix: uses `MAGE_SHELL` env var, then `SHELL`, then tries `bash`, `zsh`, `fish`, `sh`.
@@ -62,6 +66,7 @@ mage [SCRIPT]               Run a script directly
 mage run <SCRIPT>           Run a script
 mage repl                   Start interactive REPL mode
 mage init                   Create a .mageconfig file
+mage highlight <SCRIPT>     Test tree-sitter highlighting
 mage --shell <SHELL>        Override shell for script execution
 mage --help                 Show help information
 ```
@@ -113,6 +118,27 @@ evoke "echo Hello from the shell!"
     ```sh
     cargo run -- run path/to/script.mage --shell powershell
     ```
+5. **Generate highlighted HTML:**
+    ```sh
+    cargo run -- highlight path/to/script.mage
+    ```
+
+## Editor Integration
+
+### VSCode
+The tree-sitter grammar can be used with VSCode:
+
+1. Install the "Tree Sitter Queries" extension
+2. Create a `.vscode/settings.json` file with:
+```json
+{
+  "treeSitterQueries.extension": "mage",
+  "treeSitterQueries.grammar": "tree-sitter-mage"
+}
+```
+
+### Other Editors
+For other editors that support tree-sitter (like Neovim, Emacs), copy the `tree-sitter-mage` directory to your editor's tree-sitter grammar location.
 
 ## Testing
 Run all tests:

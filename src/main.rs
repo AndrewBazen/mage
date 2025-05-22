@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use clap::{Parser, Subcommand};
-use mage::{run, run_repl};
+use mage::{run, run_repl, syntax};
 
 #[derive(Parser)]
 #[command(author, version, about = "🧙 The Mage Scripting Language", long_about = None)]
@@ -29,6 +29,11 @@ enum Commands {
     Repl {},
     /// Create a new .mageconfig file in the current directory
     Init {},
+    /// Highlight a mage script using tree-sitter (for testing)
+    Highlight {
+        /// Script file to highlight
+        file: String,
+    },
 }
 
 fn main() {
@@ -47,6 +52,9 @@ fn main() {
         Some(Commands::Init {}) => {
             init_config();
         },
+        Some(Commands::Highlight { file }) => {
+            highlight_script(file);
+        },
         None => {
             // If no command but a script is provided, run it
             if let Some(script) = cli.script {
@@ -58,6 +66,7 @@ fn main() {
                 println!("  mage run file.mage    - Run a script");
                 println!("  mage repl             - Start interactive REPL");
                 println!("  mage init             - Create .mageconfig file");
+                println!("  mage highlight file.mage - Test syntax highlighting");
                 println!("  mage --help           - Show help");
             }
         }
@@ -76,6 +85,36 @@ fn run_script(path: &str, shell: Option<&str>) {
     if let Err(e) = run(&code, shell) {
         eprintln!("❌ {}", e);
         std::process::exit(1);
+    }
+}
+
+fn highlight_script(path: &str) {
+    let code = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(e) => {
+            eprintln!("📜 Failed to read spellbook: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    // Check if tree-sitter is available
+    if syntax::is_tree_sitter_available() {
+        match syntax::highlight_html(&code) {
+            Ok(html) => {
+                // Save the HTML to a file
+                let output_path = format!("{}.html", path);
+                match fs::write(&output_path, html) {
+                    Ok(_) => println!("✨ Highlighted HTML saved to {}", output_path),
+                    Err(e) => eprintln!("❌ Failed to write HTML: {}", e),
+                }
+            },
+            Err(e) => eprintln!("❌ Failed to highlight: {}", e),
+        }
+    } else {
+        println!("🔍 Tree-sitter syntax highlighting is not yet available.");
+        println!("📝 When tree-sitter support is added, this command will generate HTML with syntax highlighting.");
+        println!("💻 For now, you can use the colored REPL with basic syntax highlighting:");
+        println!("   mage repl");
     }
 }
 

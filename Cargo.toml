@@ -10,6 +10,15 @@ which = "4"
 rustyline = "13"
 clap = { version = "4.4", features = ["derive"] }
 dirs-next = "2.0"
+tree-sitter = "0.20"
+tree-sitter-highlight = "0.20"
+
+# Build dependencies are commented out until tree-sitter integration
+# [build-dependencies]
+# cc = "1.0"
 
 [lib]
 proc-macro = false
+
+[build-dependencies]
+cc = "1.0"

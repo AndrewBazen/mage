@@ -7,6 +7,7 @@ pub mod parser;
 pub mod interpreter;
 pub mod config;
 pub mod bin;
+pub mod syntax;
 
 use pest::Parser;
 use crate::interpreter::interpret;
