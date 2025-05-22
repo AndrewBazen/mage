@@ -158,3 +158,50 @@ For other Neovim configurations, ensure you:
         ```
      7. In Neovim, completely clear the parser cache with `:TSUninstall mage` followed by `:TSInstall mage`
    - This approach ensures that Neovim uses your manually compiled parser instead of trying to recompile it. 
+
+10. **Neovim crashes when editing Mage files**
+   - If Neovim crashes when typing in Mage files, the parser may have bugs or compatibility issues
+   - Solutions:
+     1. Simplify the highlights.scm file first:
+        ```scm
+        ;; Keywords
+        "conjure" @keyword
+        "incant" @keyword
+        "curse" @keyword
+        "evoke" @keyword
+        "enchant" @keyword
+        "cast" @keyword
+        "if" @keyword
+        "else" @keyword
+        "loop" @keyword
+
+        ;; Punctuation
+        "(" @punctuation.delimiter
+        ")" @punctuation.delimiter
+        "{" @punctuation.delimiter
+        "}" @punctuation.delimiter
+        ";" @punctuation.delimiter
+        "," @punctuation.delimiter
+
+        ;; Literals
+        (string) @string
+        (number) @number
+        ```
+     2. If it still crashes, try disabling TreeSitter for Mage files temporarily:
+        ```lua
+        -- In your Neovim config
+        vim.treesitter.start = function(bufnr, lang)
+          if lang == "mage" then
+            return nil  -- Disable TreeSitter for Mage files
+          end
+          -- Call the original start function for other languages
+          return require('vim.treesitter').start(bufnr, lang)
+        end
+        ```
+     3. As a last resort, try a minimal parser that does basic tokenization without complex parsing
+
+   - **Recommended solution**: Use the provided workaround file:
+     1. Copy `mage-crash-workaround.lua` to your Neovim config directory
+     2. Add `require('mage-crash-workaround')` to your init.lua
+     3. This provides a toggle command `:MageToggleTreeSitter` to enable/disable TreeSitter for Mage files
+     4. It also sets up a fallback syntax highlighting scheme when TreeSitter is disabled
