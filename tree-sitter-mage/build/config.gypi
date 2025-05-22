@@ -492,16 +492,6 @@
     "nodedir": "C:\\Users\\andre\\AppData\\Local\\node-gyp\\Cache\\23.11.0",
     "python": "C:\\Users\\andre\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
     "standalone_static_library": 1,
-    "msbuild_path": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe",
-    "cache": "C:\\Users\\andre\\AppData\\Local\\npm-cache",
-    "globalconfig": "C:\\Users\\andre\\AppData\\Roaming\\npm\\etc\\npmrc",
-    "global_prefix": "C:\\Users\\andre\\AppData\\Roaming\\npm",
-    "init_module": "C:\\Users\\andre\\.npm-init.js",
-    "local_prefix": "C:\\Users\\andre\\projects\\mage\\tree-sitter-mage",
-    "node_gyp": "C:\\Users\\andre\\AppData\\Local\\nvm\\v23.11.0\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
-    "npm_version": "10.9.2",
-    "prefix": "C:\\Users\\andre\\AppData\\Roaming\\npm",
-    "userconfig": "C:\\Users\\andre\\.npmrc",
-    "user_agent": "npm/10.9.2 node/v23.11.0 win32 x64 workspaces/false"
+    "msbuild_path": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe"
   }
 }

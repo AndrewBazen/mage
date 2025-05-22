@@ -1,5 +1,5 @@
 {
-  "name": "tree-sitter-mage2",
+  "name": "tree-sitter-mage",
   "version": "0.1.0",
   "description": "Tree-sitter grammar for the Mage language",
   "main": "bindings/node",

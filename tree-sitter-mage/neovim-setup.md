@@ -12,7 +12,7 @@ return {
     opts = function(_, opts)
       -- Add parser configuration
       local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-      parser_config.mage2 = {
+      parser_config.mage = {
         install_info = {
           url = "~/projects/mage", -- Local path to Mage repository
           files = {"src/parser.c"}, -- Corrected path to parser.c
@@ -26,7 +26,7 @@ return {
       
       -- Add mage to the list of parsers to install
       if type(opts.ensure_installed) == "table" then
-        table.insert(opts.ensure_installed, "mage2")
+        table.insert(opts.ensure_installed, "mage")
       end
     end,
   },
@@ -58,7 +58,7 @@ For other Neovim configurations, ensure you:
 1. Add the Mage TreeSitter parser configuration to your init.lua or equivalent:
    ```lua
    local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-   parser_config.mage2 = {
+   parser_config.mage = {
      install_info = {
        url = "~/projects/mage", -- Local path to Mage repository
        files = {"src/parser.c"}, -- Corrected path to parser.c
@@ -80,7 +80,7 @@ For other Neovim configurations, ensure you:
 
 3. Install the parser from within Neovim:
    ```
-   :TSInstall mage2
+   :TSInstall mage
    ```
 
 ## Troubleshooting
@@ -117,3 +117,44 @@ For other Neovim configurations, ensure you:
    - Some Neovim versions have issues with syntax in TreeSitter query files. Try completely removing the query files first, then add minimal queries after the parser is working.
    - In some cases, you may need to change the parser name entirely to avoid cached configurations.
    - Verify your highlights.scm file doesn't use complex syntax like lists in square brackets. 
+
+7. **Timestamp error in parser.c file**
+   - If you encounter an error like `expected '=', ',', ';', 'asm' or '__attribute__' before numeric constant` with a timestamp in parser.c, this is due to the parser generator incorrectly adding a timestamp to the code.
+   - Solution: Use the clean version of the parser:
+     ```
+     cp src/clean-parser.c src/parser.c
+     gcc -o src/parser.o -c src/parser.c -I src/tree_sitter -fPIC
+     gcc -shared -o parser.so src/parser.o
+     ```
+   - This will create a shared library that can be loaded by Neovim.
+
+8. **"Failed to load symbol tree_sitter_mage" error**
+   - This happens when there's a naming mismatch between what Neovim is looking for and what your parser exports.
+   - Neovim looks for a function called `tree_sitter_mage` but your code might be exporting `tree_sitter_mage2`.
+   - Solution: Make sure all these files use the same name:
+     - In `src/parser.c`: The exported function should be `tree_sitter_mage(void)`
+     - In `bindings/node/binding.cc`: Use `tree_sitter_mage()` and `NODE_MODULE(tree_sitter_mage_binding, Init)`
+     - In `tree-sitter.json`: Use `"language-name": "mage"`
+     - In `package.json`: Use `"name": "tree-sitter-mage"`
+     - In `binding.gyp`: Use `"target_name": "tree_sitter_mage_binding"`
+     - In Neovim configuration: Use `parser_config.mage` and `:TSInstall mage`
+
+9. **Dealing with persistent caching issues**
+   - If Neovim is still loading cached versions of the parser despite your changes:
+     1. Clear the build directory: `Remove-Item -Path ./build -Recurse -Force`
+     2. Rename any old parser files: `Rename-Item -Path "src/parser-mage2.c" -NewName "parser-mage2.c.bak"`
+     3. Rebuild the parser completely: 
+        ```
+        gcc -o src/parser.o -c src/parser.c -I src/tree_sitter -fPIC
+        gcc -shared -o libtree-sitter-mage.so src/parser.o
+        ```
+     4. Create a parsers directory in your Neovim config: `New-Item -Path "$env:LOCALAPPDATA\nvim\parsers" -ItemType Directory -Force`
+     5. Copy the parser to the Neovim parsers directory with the correct name: `Copy-Item -Path ".\libtree-sitter-mage.so" -Destination "$env:LOCALAPPDATA\nvim\parsers\mage.so"`
+     6. Update your Neovim configuration to append the parsers directory to the runtime path:
+        ```lua
+        -- Point to the manually compiled parser
+        local parser_path = vim.fn.stdpath("config") .. "/parsers"
+        vim.opt.runtimepath:append(parser_path)
+        ```
+     7. In Neovim, completely clear the parser cache with `:TSUninstall mage` followed by `:TSInstall mage`
+   - This approach ensures that Neovim uses your manually compiled parser instead of trying to recompile it. 
