@@ -236,3 +236,42 @@ For other Neovim configurations, ensure you:
          - Example: `(identifier) @completion`
       3. Try the language rename approach outlined in the previous section
          - This can completely sidestep plugin compatibility issues by using a fresh language name
+
+13. **Neovim Using Wrong Query Path**
+    - If you see errors pointing to Neovim's own files like `s/Neovim/share/nvim/runtime/lua/vim/treesitter/query.lua`, Neovim is using its internal query paths instead of your custom ones
+    - Solutions:
+      1. Override Neovim's query path in your config:
+         ```lua
+         -- In your Neovim init.lua
+         local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
+         parser_config.mage = {
+           install_info = {
+             url = "~/projects/mage",
+             files = {"src/parser.c"},
+             location = "tree-sitter-mage",
+             branch = "main",
+           },
+           filetype = "mage",
+           -- Add this line to specify the query directory
+           queries = {
+             highlights = "queries/highlights.scm",
+           },
+         }
+         
+         -- Explicitly set query search path
+         vim.api.nvim_create_autocmd("FileType", {
+           pattern = "mage",
+           callback = function()
+             vim.treesitter.query.set_query("mage", "highlights", vim.fn.readfile("~/projects/mage/tree-sitter-mage/queries/highlights.scm"))
+           end
+         })
+         ```
+      2. Install the parser to Neovim's official location:
+         - Find Neovim's parser installation directory: `:lua print(vim.fn.stdpath("data").."/site/pack/packer/start/nvim-treesitter/parser")`
+         - Copy your parser there: `cp parser.so /path/to/nvim/parser/`
+         - Find Neovim's query directory: `:lua print(vim.fn.stdpath("data").."/site/pack/packer/start/nvim-treesitter/queries")`
+         - Create a directory there for your language: `mkdir -p /path/to/nvim/queries/mage`
+         - Copy your query files: `cp queries/*.scm /path/to/nvim/queries/mage/`
+         - **Automated installation**: Run the included PowerShell script `.\install-to-neovim.ps1` which will automatically find your Neovim installation and copy all required files
+      3. Use the language rename trick from the previous section
+         - This forces Neovim to look for new query files without any preconceptions
