@@ -27,8 +27,8 @@
 ")" @punctuation.delimiter
 "{" @punctuation.delimiter
 "}" @punctuation.delimiter
-"\[" @punctuation.delimiter
-"\]" @punctuation.delimiter
+; Use capture groups for brackets
+([(tk_lbrack) (tk_rbrack)] @punctuation.delimiter)
 "," @punctuation.delimiter
 ";" @punctuation.delimiter
 
