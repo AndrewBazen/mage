@@ -30,19 +30,14 @@
 "," @punctuation.delimiter
 ";" @punctuation.delimiter
 
-;; Variables
+;; Variables and Functions
 (variable_declaration name: (identifier) @variable.declaration)
 (parameter_list (identifier) @variable.parameter)
-(identifier) @variable
-
-;; Functions
 (function_declaration name: (identifier) @function)
 (function_call name: (identifier) @function.call)
 
 ;; Literals
 (string) @string
-(escape_sequence) @string.escape
-(string_interpolation) @string.special
 (number) @number
 (boolean) @constant.builtin
 

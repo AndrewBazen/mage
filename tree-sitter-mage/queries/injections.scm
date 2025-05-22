@@ -1,1 +1,1 @@
-;; Injections for Mage language 
+;; No injections for now 

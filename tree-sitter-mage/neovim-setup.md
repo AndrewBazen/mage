@@ -12,7 +12,7 @@ return {
     opts = function(_, opts)
       -- Add parser configuration
       local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-      parser_config.mage = {
+      parser_config.mage2 = {
         install_info = {
           url = "~/projects/mage", -- Local path to Mage repository
           files = {"src/parser.c"}, -- Corrected path to parser.c
@@ -26,7 +26,7 @@ return {
       
       -- Add mage to the list of parsers to install
       if type(opts.ensure_installed) == "table" then
-        table.insert(opts.ensure_installed, "mage")
+        table.insert(opts.ensure_installed, "mage2")
       end
     end,
   },
@@ -58,7 +58,7 @@ For other Neovim configurations, ensure you:
 1. Add the Mage TreeSitter parser configuration to your init.lua or equivalent:
    ```lua
    local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-   parser_config.mage = {
+   parser_config.mage2 = {
      install_info = {
        url = "~/projects/mage", -- Local path to Mage repository
        files = {"src/parser.c"}, -- Corrected path to parser.c
@@ -80,7 +80,7 @@ For other Neovim configurations, ensure you:
 
 3. Install the parser from within Neovim:
    ```
-   :TSInstall mage
+   :TSInstall mage2
    ```
 
 ## Troubleshooting
@@ -111,4 +111,9 @@ For other Neovim configurations, ensure you:
 
 5. **"No such file or directory" during compilation**
    - Double-check the `files` array in your parser configuration. The paths should be relative to the repository root, not to the tree-sitter-mage directory.
-   - If using a local repository, ensure the absolute path is correct. 
+   - If using a local repository, ensure the absolute path is correct.
+   
+6. **TreeSitter query parsing errors**
+   - Some Neovim versions have issues with syntax in TreeSitter query files. Try completely removing the query files first, then add minimal queries after the parser is working.
+   - In some cases, you may need to change the parser name entirely to avoid cached configurations.
+   - Verify your highlights.scm file doesn't use complex syntax like lists in square brackets. 
