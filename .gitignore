@@ -15,6 +15,7 @@ Cargo.toml.bk
 # Windows
 Thumbs.db
 Desktop.ini
+%LOCALAPPDATA%/
 # macOS
 .AppleDouble
 .LSOverride
