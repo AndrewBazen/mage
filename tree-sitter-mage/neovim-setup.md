@@ -275,3 +275,70 @@ For other Neovim configurations, ensure you:
          - **Automated installation**: Run the included PowerShell script `.\install-to-neovim.ps1` which will automatically find your Neovim installation and copy all required files
       3. Use the language rename trick from the previous section
          - This forces Neovim to look for new query files without any preconceptions
+
+14. **Neo-tree Plugin Errors**
+    - If you're seeing error messages specifically mentioning Neo-tree and invalid node types, a more aggressive approach is needed
+    - Solution:
+      1. Install the Lua fix script that directly patches Neovim's query handling:
+         - Run the `install-to-neovim.ps1` script to install the parser, query files, and the fix script
+         - Add this line to your init.lua: `require('fix-neovim-queries')`
+      2. The fix script does several things:
+         - Directly overrides Neovim's query loading function for Mage files
+         - Injects a safe, minimal query that won't cause syntax errors
+         - Adds special handling for Neo-tree to prevent crashes
+         - Provides the `:MageToggleTreeSitter` command to enable/disable TreeSitter as needed
+      3. The approach is more reliable than file-based queries because:
+         - It intercepts the query at runtime, avoiding any caching issues
+         - It's specifically designed to handle Neo-tree's behavior
+         - It provides fallback mechanisms when TreeSitter fails
+
+15. **Using Mage with Mason and LSP**
+    - For a more integrated experience, you can install Mage as a proper language for Mason and Neovim's LSP
+    - This approach provides:
+      - Proper language server integration
+      - Code completion for Mage keywords
+      - Consistent installation structure that works with Neovim's ecosystem
+    - Installation:
+      1. Run the provided script: `.\install-to-mason.ps1`
+      2. Add the language to your Neovim config:
+         ```lua
+         -- In your Neovim init.lua or LSP config
+         require('mage-lsp-config')
+         
+         -- If using Mason, add it to your ensure_installed list
+         require("mason").setup()
+         require("mason-lspconfig").setup({
+           ensure_installed = { "mage-lsp", ... },
+         })
+         ```
+      3. The script provides:
+         - A basic language server with keyword completion
+         - Parser integration with Neovim's TreeSitter system
+         - Configuration files for proper Mason integration
+         - The query fix to prevent syntax errors
+      4. This approach works well with other Neovim language tools like:
+         - Mason
+         - nvim-cmp (completion)
+         - null-ls / nvim-lint (linting)
+         - And other LSP-based extensions
+
+16. **LSP vs TreeSitter: When to Use Each**
+    - LSP (Language Server Protocol) and TreeSitter serve different purposes:
+      - **LSP** provides intelligent features like completion, go-to-definition, hover info
+      - **TreeSitter** provides syntax highlighting, code folding, and structural editing
+    
+    - **Mason-only approach**:
+      - If you primarily want language support features (completion, etc.), you can use just the LSP part
+      - Run `.\install-to-mason.ps1` and choose "n" when asked about TreeSitter support
+      - This will install only the LSP integration, which is simpler and less prone to issues
+      - You'll get keyword completion but will rely on Neovim's basic regex-based syntax highlighting
+    
+    - **Combined approach**:
+      - If you want both intelligent features AND advanced syntax highlighting, use both
+      - Run `.\install-to-mason.ps1` and choose "y" when asked about TreeSitter support
+      - This installs both the LSP server and the TreeSitter parser
+      - You'll need both `require('mage-lsp-config')` and `require('fix-neovim-queries')` in your config
+    
+    - Choose the approach that best fits your needs:
+      - LSP-only (Mason): Simpler, more stable, but basic highlighting
+      - LSP + TreeSitter: More features but potentially more complex

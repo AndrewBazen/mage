@@ -7,6 +7,10 @@ if (-not (Test-Path $nvimDataPath)) {
     $nvimDataPath = Join-Path $env:LOCALAPPDATA "nvim"
 }
 
+# Get Neovim config directory
+$nvimConfigPath = Join-Path $env:LOCALAPPDATA "nvim"
+$nvimLuaPath = Join-Path $nvimConfigPath "lua"
+
 # Find nvim-treesitter installation
 $treesitterDir = ""
 $possiblePaths = @(
@@ -57,5 +61,16 @@ foreach ($file in $queryFiles) {
     Write-Host "Copied query file $($file.Name) to $((Join-Path $queryDir $file.Name))" -ForegroundColor Green
 }
 
+# Copy fix-neovim-queries.lua to Neovim config directory
+if (-not (Test-Path $nvimLuaPath)) {
+    New-Item -Path $nvimLuaPath -ItemType Directory -Force | Out-Null
+}
+$fixFile = Join-Path $PSScriptRoot "fix-neovim-queries.lua"
+$targetFixFile = Join-Path $nvimLuaPath "fix-neovim-queries.lua"
+Copy-Item -Path $fixFile -Destination $targetFixFile -Force
+Write-Host "Copied fix-neovim-queries.lua to $targetFixFile" -ForegroundColor Green
+
 Write-Host "`nInstallation complete. Please restart Neovim for changes to take effect." -ForegroundColor Cyan
+Write-Host "Add this line to your Neovim init.lua to enable the fix:" -ForegroundColor Cyan
+Write-Host "    require('fix-neovim-queries')" -ForegroundColor Yellow
 Write-Host "You may need to run :TSInstall mage or add mage to your configured parsers in init.lua" -ForegroundColor Cyan 
