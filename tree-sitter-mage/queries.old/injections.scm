@@ -1,1 +1,0 @@
-;; Injections for Mage language 
