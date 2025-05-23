@@ -2,18 +2,10 @@ use std::fs;
 use std::path::Path;
 use std::collections::HashMap;
 
+#[derive(Default)]
 pub struct MageConfig {
     pub shell: Option<String>,
     pub options: HashMap<String, String>,
-}
-
-impl Default for MageConfig {
-    fn default() -> Self {
-        MageConfig {
-            shell: None,
-            options: HashMap::new(),
-        }
-    }
 }
 
 impl MageConfig {

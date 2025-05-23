@@ -10,6 +10,7 @@ pub mod bin;
 pub mod syntax;
 
 use pest::Parser;
+use pest::iterators::Pairs;
 use crate::interpreter::interpret;
 use crate::config::MageConfig;
 
@@ -44,6 +45,44 @@ pub fn run(source: &str, cli_shell: Option<&str>) -> Result<(), String> {
         }
         Err(err) => Err(format!("Parse error: {}", err)),
     }
+}
+
+pub fn format(source: &str) -> Result<String, String> {
+    match MageParser::parse(crate::parser::Rule::program, source) {
+        Ok(pairs) => {
+            let mut result = String::new();
+
+            for pair in pairs {
+                let line = format_pair(pair);
+                if !line.trim().is_empty() {
+                    result.push_str(line.trim_end());
+                    result.push('\n');
+                }
+            }
+            Ok(result)
+        }
+        Err(err) => Err(format!("Parse error: {}", err)),
+    }
+}
+
+fn format_pair(pair: pest::iterators::Pair<Rule>) -> String {
+    match pair.as_rule() {
+        Rule::conjure => {
+            let mut inner = pair.into_inner();
+            let ident = inner.next().unwrap().as_str();
+            let value = inner.next().unwrap().as_str();
+            format!("conjure {} = {}", ident, value)
+        }
+        Rule::incant => {
+            let string = pair.into_inner().next().unwrap().as_str();
+            format!("incant {}", string)
+        }
+        _ => pair.as_str().to_string(), // fallback for other rules
+    }
+}
+
+pub fn parse_ast(source: &str) -> Result<Pairs<Rule>, String> {
+    MageParser::parse(crate::Rule::program, source).map_err(|e| format!("Parse error: {}", e))
 }
 
 // Run REPL with optional shell override

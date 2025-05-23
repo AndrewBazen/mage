@@ -257,7 +257,7 @@ pub mod repl {
                 } else if c == '"' {
                     // Found start of string
                     if !buffer.is_empty() {
-                        let word_ended = buffer.chars().last().map_or(true, |last| last.is_whitespace());
+                        let word_ended = buffer.chars().last().is_none_or(|last| last.is_whitespace());
                         
                         if word_ended {
                             // Check for keyword at the end of the buffer

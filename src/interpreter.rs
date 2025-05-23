@@ -15,30 +15,25 @@ pub fn interpret<'i>(
     functions: &mut HashMap<String, FunctionDef<'i>>,
 ) {
     for pair in pairs {
-        match pair.as_rule() {
-            Rule::program => {
-                for incantation in pair.into_inner() {
-                    match incantation.as_rule() {
-                        Rule::incantation => {
-                            let mut inner = incantation.into_inner();
-                            let stmt = inner.next().unwrap();
-                            match stmt.as_rule() {
-                                Rule::conjure => handle_conjure(stmt, scope),
-                                Rule::incant => handle_incant(stmt, scope),
-                                Rule::curse => handle_curse(stmt),
-                                Rule::evoke => handle_evoke(stmt, scope, shell_override),
-                                Rule::if_block => handle_if_block(stmt, scope),
-                                Rule::loop_block => handle_loop_block(stmt, scope),
-                                Rule::enchant => handle_enchant(stmt, functions),
-                                Rule::cast => handle_cast(stmt, scope, functions),
-                                _ => unreachable!("Unknown statement: {:?}", stmt),
-                            }
-                        }
-                        _ => {}
+        if pair.as_rule() == Rule::program {
+            for incantation in pair.into_inner() {
+                if incantation.as_rule() == Rule::incantation {
+                    let mut inner = incantation.into_inner();
+                    let stmt = inner.next().unwrap();
+
+                    match stmt.as_rule() {
+                        Rule::conjure => handle_conjure(stmt, scope),
+                        Rule::incant => handle_incant(stmt, scope),
+                        Rule::curse => handle_curse(stmt),
+                        Rule::evoke => handle_evoke(stmt, scope, shell_override),
+                        Rule::if_block => handle_if_block(stmt, scope),
+                        Rule::loop_block => handle_loop_block(stmt, scope),
+                        Rule::enchant => handle_enchant(stmt, functions),
+                        Rule::cast => handle_cast(stmt, scope, functions),
+                        _ => unreachable!("Unknown statement: {:?}", stmt),
                     }
                 }
             }
-            _ => {}
         }
     }
 }
@@ -129,21 +124,18 @@ fn handle_if_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String
     let block = inner.next().unwrap();
     if eval_condition(cond, scope) {
         for stmt in block.into_inner() {
-            match stmt.as_rule() {
-                Rule::incantation => {
-                    let mut inner = stmt.into_inner();
-                    let stmt = inner.next().unwrap();
-                    match stmt.as_rule() {
-                        Rule::conjure => handle_conjure(stmt, scope),
-                        Rule::incant => handle_incant(stmt, scope),
-                        Rule::curse => handle_curse(stmt),
-                        Rule::evoke => handle_evoke(stmt, scope, None),
-                        Rule::if_block => handle_if_block(stmt, scope),
-                        Rule::loop_block => handle_loop_block(stmt, scope),
-                        _ => unreachable!(),
-                    }
+            if stmt.as_rule() == Rule::incantation {
+                let mut inner = stmt.into_inner();
+                let stmt = inner.next().unwrap();
+                match stmt.as_rule() {
+                    Rule::conjure => handle_conjure(stmt, scope),
+                    Rule::incant => handle_incant(stmt, scope),
+                    Rule::curse => handle_curse(stmt),
+                    Rule::evoke => handle_evoke(stmt, scope, None),
+                    Rule::if_block => handle_if_block(stmt, scope),
+                    Rule::loop_block => handle_loop_block(stmt, scope),
+                    _ => unreachable!(),
                 }
-                _ => {}
             }
         }
     }
@@ -153,21 +145,18 @@ fn handle_loop_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<Stri
     let block = pair.into_inner().next().unwrap();
     for _ in 0..3 { // Loop 3 times for demonstration
         for stmt in block.clone().into_inner() {
-            match stmt.as_rule() {
-                Rule::incantation => {
-                    let mut inner = stmt.into_inner();
-                    let stmt = inner.next().unwrap();
-                    match stmt.as_rule() {
-                        Rule::conjure => handle_conjure(stmt, scope),
-                        Rule::incant => handle_incant(stmt, scope),
-                        Rule::curse => handle_curse(stmt),
-                        Rule::evoke => handle_evoke(stmt, scope, None),
-                        Rule::if_block => handle_if_block(stmt, scope),
-                        Rule::loop_block => handle_loop_block(stmt, scope),
-                        _ => unreachable!(),
-                    }
+            if stmt.as_rule() == Rule::incantation {
+                let mut inner = stmt.into_inner();
+                let stmt = inner.next().unwrap();
+                match stmt.as_rule() {
+                    Rule::conjure => handle_conjure(stmt, scope),
+                    Rule::incant => handle_incant(stmt, scope),
+                    Rule::curse => handle_curse(stmt),
+                    Rule::evoke => handle_evoke(stmt, scope, None),
+                    Rule::if_block => handle_if_block(stmt, scope),
+                    Rule::loop_block => handle_loop_block(stmt, scope),
+                    _ => unreachable!(),
                 }
-                _ => {}
             }
         }
     }
@@ -203,23 +192,20 @@ fn handle_cast<'i>(pair: pest::iterators::Pair<'i, Rule>, parent_scope: &mut Has
             scope.insert(param.clone(), arg.clone());
         }
         for stmt in &func.body {
-            match stmt.as_rule() {
-                Rule::incantation => {
-                    let mut inner = stmt.clone().into_inner();
-                    let stmt = inner.next().unwrap();
-                    match stmt.as_rule() {
-                        Rule::conjure => handle_conjure(stmt, &mut scope),
-                        Rule::incant => handle_incant(stmt, &scope),
-                        Rule::curse => handle_curse(stmt),
-                        Rule::evoke => handle_evoke(stmt, &scope, None),
-                        Rule::if_block => handle_if_block(stmt, &mut scope),
-                        Rule::loop_block => handle_loop_block(stmt, &mut scope),
-                        Rule::enchant => {/* ignore nested enchant for now */},
-                        Rule::cast => handle_cast(stmt, &mut scope, functions),
-                        _ => unreachable!(),
-                    }
+            if stmt.as_rule() == Rule::incantation {
+                let mut inner = stmt.clone().into_inner();
+                let stmt = inner.next().unwrap();
+                match stmt.as_rule() {
+                    Rule::conjure => handle_conjure(stmt, &mut scope),
+                    Rule::incant => handle_incant(stmt, &scope),
+                    Rule::curse => handle_curse(stmt),
+                    Rule::evoke => handle_evoke(stmt, &scope, None),
+                    Rule::if_block => handle_if_block(stmt, &mut scope),
+                    Rule::loop_block => handle_loop_block(stmt, &mut scope),
+                    Rule::enchant => {/* ignore nested enchant for now */},
+                    Rule::cast => handle_cast(stmt, &mut scope, functions),
+                    _ => unreachable!(),
                 }
-                _ => {}
             }
         }
     } else {

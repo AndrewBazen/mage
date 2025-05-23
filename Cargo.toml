@@ -6,12 +6,12 @@ edition = "2024"
 [dependencies]
 pest = "2.7"
 pest_derive = "2.7"
-which = "4"
-rustyline = "13"
+which = "7.0.3"
+rustyline = "15"
 clap = { version = "4.4", features = ["derive"] }
 dirs-next = "2.0"
-tree-sitter = "0.20"
-tree-sitter-highlight = "0.20"
+tree-sitter = "0.25.4"
+tree-sitter-highlight = "0.25.4"
 
 # Build dependencies are commented out until tree-sitter integration
 # [build-dependencies]

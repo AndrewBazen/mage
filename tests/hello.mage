@@ -3,3 +3,11 @@ incant "Welcome, $name"
 
 evoke "whoami"
 evoke "dir"
+
+enchant my_function(name) {
+    incant "Hello, $name"
+}
+
+cast my_function("Mage")
+
+

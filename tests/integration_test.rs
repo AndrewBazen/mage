@@ -13,7 +13,7 @@ incant \"Bye, ${name}!\"\n";
 
     // Run the mage interpreter
     let output = Command::new("cargo")
-        .args(&["run", "--", script_path])
+        .args(["run", "--", script_path])
         .output()
         .expect("failed to execute process");
 

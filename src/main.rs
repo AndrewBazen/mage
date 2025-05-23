@@ -34,6 +34,15 @@ enum Commands {
         /// Script file to highlight
         file: String,
     },
+    /// format a Mage script
+    Format {
+        /// Script file to format, or use '-' for stdin
+        file: String,
+
+        /// Format in place (overwrite the file)
+        #[arg(short, long)]
+        inplace: bool,
+    },
 }
 
 fn main() {
@@ -49,6 +58,9 @@ fn main() {
                 std::process::exit(1);
             }
         },
+        Some(Commands::Format { file, inplace }) => {
+            format_script(file, *inplace);
+        }
         Some(Commands::Init {}) => {
             init_config();
         },
@@ -115,6 +127,41 @@ fn highlight_script(path: &str) {
         println!("📝 When tree-sitter support is added, this command will generate HTML with syntax highlighting.");
         println!("💻 For now, you can use the colored REPL with basic syntax highlighting:");
         println!("   mage repl");
+    }
+}
+
+fn format_script(path: &str, inplace: bool) {
+    use std::io::{self, Read};
+
+    let input = if path == "-" {
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer).expect("Failed to read from stdin");
+        buffer
+    } else {
+        match fs::read_to_string(path) {
+            Ok(content) => content,
+            Err(e) => {
+                eprintln!("📜 Failed to read script: {}", e);
+                std::process::exit(1);
+            }
+        }
+    };
+
+    match mage::format(&input) {
+        Ok(output) => {
+            if inplace && path != "-" {
+                if let Err(e) = fs::write(path, output) {
+                    eprintln!("❌ Failed to overwrite file: {}", e);
+                    std::process::exit(1);
+                }
+            } else {
+                println!("{}", output);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to overwrite file: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 
