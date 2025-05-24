@@ -1,23 +1,38 @@
-/target
+# === Rust build artifacts ===
+/target/
 **/*.rs.bk
-Cargo.lock
-Cargo.toml.bk
-.DS_Store
+Cargo.lock # include if you're publishing a library, remove if it's a binary project
+
+# === Tree-sitter compiled files ===
+/tree-sitter-mage/src/parser.c
+/tree-sitter-mage/src/scanner.c
+/tree-sitter-mage/src/scanner.cc
+/tree-sitter-mage/src/grammar.json
+
+# === Editor/IDE Files ===
 *.swp
 *.swo
 *.tmp
+*.bak
 *.log
-/tests/tmp_*.mage
-# VSCode
+*.DS_Store
 .vscode/
-# JetBrains
 .idea/
-# Windows
-Thumbs.db
-Desktop.ini
-%LOCALAPPDATA%/
-# macOS
-.AppleDouble
-.LSOverride
-# Linux
+*.code-workspace
+
+# === Mac/Linux Files ===
+*.dSYM
+*.orig
+*.rej
 *~
+
+# === Node/npm (if ever used for Tree-sitter tooling) ===
+/node_modules/
+
+# === Test artifacts ===
+*.test-result
+*.test.json
+/test-outputs/
+
+# === Custom config ===
+.mageconfig

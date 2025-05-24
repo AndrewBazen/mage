@@ -1,6 +1,7 @@
-use pest::iterators::Pairs;
 use crate::Rule;
+use pest::iterators::Pairs;
 use std::collections::HashMap;
+use std::env;
 use std::io::{self, Write};
 
 pub struct FunctionDef<'i> {
@@ -94,7 +95,11 @@ fn shell_command(command: &str, shell_override: Option<&str>) -> std::process::C
     cmd
 }
 
-fn handle_evoke(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, String>, shell_override: Option<&str>) {
+fn handle_evoke(
+    pair: pest::iterators::Pair<Rule>,
+    scope: &HashMap<String, String>,
+    shell_override: Option<&str>,
+) {
     let raw = pair.into_inner().next().unwrap().as_str().trim_matches('"');
     let command = interpolate(raw, scope);
     let output = shell_command(&command, shell_override).output();
@@ -143,7 +148,8 @@ fn handle_if_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String
 
 fn handle_loop_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, String>) {
     let block = pair.into_inner().next().unwrap();
-    for _ in 0..3 { // Loop 3 times for demonstration
+    for _ in 0..3 {
+        // Loop 3 times for demonstration
         for stmt in block.clone().into_inner() {
             if stmt.as_rule() == Rule::incantation {
                 let mut inner = stmt.into_inner();
@@ -162,13 +168,19 @@ fn handle_loop_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<Stri
     }
 }
 
-fn handle_enchant<'i>(pair: pest::iterators::Pair<'i, Rule>, functions: &mut HashMap<String, FunctionDef<'i>>) {
+fn handle_enchant<'i>(
+    pair: pest::iterators::Pair<'i, Rule>,
+    functions: &mut HashMap<String, FunctionDef<'i>>,
+) {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str().to_string();
     let params_pair = inner.next().unwrap();
     let mut params = Vec::new();
     if params_pair.as_rule() == Rule::param_list {
-        params = params_pair.into_inner().map(|p| p.as_str().to_string()).collect();
+        params = params_pair
+            .into_inner()
+            .map(|p| p.as_str().to_string())
+            .collect();
     }
     let body_pair = inner.next().unwrap();
     let body: Vec<_> = body_pair.into_inner().collect();
@@ -176,14 +188,21 @@ fn handle_enchant<'i>(pair: pest::iterators::Pair<'i, Rule>, functions: &mut Has
     functions.insert(name, func);
 }
 
-fn handle_cast<'i>(pair: pest::iterators::Pair<'i, Rule>, parent_scope: &mut HashMap<String, String>, functions: &HashMap<String, FunctionDef<'i>>) {
+fn handle_cast<'i>(
+    pair: pest::iterators::Pair<'i, Rule>,
+    parent_scope: &mut HashMap<String, String>,
+    functions: &HashMap<String, FunctionDef<'i>>,
+) {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str();
     let args_pair = inner.next();
     let mut args: Vec<String> = Vec::new();
     if let Some(args_pair) = args_pair {
         if args_pair.as_rule() == Rule::arg_list {
-            args = args_pair.into_inner().map(|a| a.as_str().trim_matches('"').to_string()).collect();
+            args = args_pair
+                .into_inner()
+                .map(|a| a.as_str().trim_matches('"').to_string())
+                .collect();
         }
     }
     if let Some(func) = functions.get(name) {
@@ -202,7 +221,7 @@ fn handle_cast<'i>(pair: pest::iterators::Pair<'i, Rule>, parent_scope: &mut Has
                     Rule::evoke => handle_evoke(stmt, &scope, None),
                     Rule::if_block => handle_if_block(stmt, &mut scope),
                     Rule::loop_block => handle_loop_block(stmt, &mut scope),
-                    Rule::enchant => {/* ignore nested enchant for now */},
+                    Rule::enchant => { /* ignore nested enchant for now */ }
                     Rule::cast => handle_cast(stmt, &mut scope, functions),
                     _ => unreachable!(),
                 }
@@ -235,11 +254,26 @@ fn interpolate(text: &str, scope: &HashMap<String, String>) -> String {
             // Handle escape sequences
             if let Some(&next_ch) = chars.peek() {
                 match next_ch {
-                    '\\' => { result.push('\\'); chars.next(); }
-                    '$'  => { result.push('$'); chars.next(); }
-                    '{'  => { result.push('{'); chars.next(); }
-                    '}'  => { result.push('}'); chars.next(); }
-                    _    => { result.push(next_ch); chars.next(); }
+                    '\\' => {
+                        result.push('\\');
+                        chars.next();
+                    }
+                    '$' => {
+                        result.push('$');
+                        chars.next();
+                    }
+                    '{' => {
+                        result.push('{');
+                        chars.next();
+                    }
+                    '}' => {
+                        result.push('}');
+                        chars.next();
+                    }
+                    _ => {
+                        result.push(next_ch);
+                        chars.next();
+                    }
                 }
             }
         } else if ch == '$' {
