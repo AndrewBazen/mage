@@ -82,14 +82,11 @@ fn main() {
             if let Some(script) = cli.script {
                 run_script(&script, cli.shell.as_deref());
             } else {
-                // No subcommand and no script, show help
-                println!("🧙 Welcome to Mage!");
-                println!("Try one of these commands:");
-                println!("  mage run file.mage    - Run a script");
-                println!("  mage repl             - Start interactive REPL");
-                println!("  mage init             - Create .mageconfig file");
-                println!("  mage highlight file.mage - Test syntax highlighting");
-                println!("  mage --help           - Show help");
+                // No subcommand and no script, start REPL by default
+                if let Err(e) = run_repl(cli.shell.as_deref()) {
+                    eprintln!("❌ {}", e);
+                    std::process::exit(1);
+                }
             }
         }
     }

@@ -73,7 +73,7 @@ pub fn setup_with_dry_run(dry_run: bool) -> io::Result<()> {
     let dirs = config
         .get_mut("parser-directories")
         .and_then(|v| v.as_array_mut())
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Invalid config.json format"))?;
+        .ok_or_else(|| io::Error::other("Invalid config.json format"))?;
 
     let grammar_str = grammar_path.to_string_lossy().to_string();
     if !dirs.iter().any(|v| v.as_str() == Some(&grammar_str)) {

@@ -1,0 +1,20 @@
+# This test checks if the scry-morph block works correctly
+
+conjure test_var = "hello"
+
+scry test_var == "hello" {
+    incant "This should print"
+} morph test_var == "world" {
+    incant "This should not print"
+} 
+scry test_var == "goodbye" {
+    incant "This should not print"
+} morph test_var == "hello" {
+    incant "This should print"
+} 
+
+scry test_var == "goodbye" {
+    incant "This should not print"
+} morph test_var == "world" {
+    incant "This should not print"
+} 

@@ -2636,7 +2636,7 @@ extern "C" {
 #define TS_PUBLIC __attribute__((visibility("default")))
 #endif
 
-TS_PUBLIC const TSLanguage *tree_sitter_mage2(void) {
+TS_PUBLIC const TSLanguage *tree_sitter_mage(void) {
   static const TSLanguage language = {
     .abi_version = LANGUAGE_VERSION,
     .symbol_count = SYMBOL_COUNT,
@@ -2664,7 +2664,7 @@ TS_PUBLIC const TSLanguage *tree_sitter_mage2(void) {
     .lex_modes = (const void*)ts_lex_modes,
     .lex_fn = ts_lex,
     .primary_state_ids = ts_primary_state_ids,
-    .name = "mage2",
+    .name = "mage",
     .max_reserved_word_set_size = 0,
     .metadata = {
       .major_version = 0,

@@ -1,0 +1,22 @@
+# Test the new arcane syntax
+
+conjure magic_level = "novice"
+conjure spell_count = "3"
+
+# Scry (if) with lest (else)
+scry magic_level == "novice" {
+    incant "🔮 You are a novice mage"
+} lest {
+    incant "🧙 You are an experienced mage"
+}
+
+# Scry (if) with morph (else if)
+scry spell_count == "0" {
+    incant "📚 Time to study more spells"
+} morph spell_count == "3" {
+    incant "⚡ You know a few spells"
+} lest {
+    incant "🌟 You are a master of many spells"
+}
+
+incant "🎭 Arcane syntax test complete!" 

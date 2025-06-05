@@ -1,0 +1,19 @@
+# Test scry-lest functionality
+
+conjure test_var = "hello"
+
+# This should execute the scry block
+scry test_var == "hello" {
+    incant "✅ Condition is true - executing scry block"
+} lest {
+    incant "❌ This should not print"
+}
+
+# This should execute the lest block
+scry test_var == "goodbye" {
+    incant "❌ This should not print"
+} lest {
+    incant "✅ Condition is false - executing lest block"
+}
+
+incant "🎉 Scry-lest test complete!" 

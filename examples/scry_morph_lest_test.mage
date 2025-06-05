@@ -1,0 +1,26 @@
+# This test checks if the scry-morph-lest block works correctly
+
+conjure test_var = "hello"
+
+scry test_var == "hello" {
+    incant "scry printed"
+} morph test_var == "world" {
+    incant "morph printed"
+} lest {
+    incant "lest printed"
+}
+scry test_var == "goodbye" {
+    incant "scry printed"
+} morph test_var == "hello" {
+    incant "morph printed"
+} lest {
+    incant "lest printed"
+}
+
+scry test_var == "goodbye" {
+    incant "scry printed"
+} morph test_var == "world" {
+    incant "morph printed"
+} lest {
+    incant "lest printed"
+}

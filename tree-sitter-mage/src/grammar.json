@@ -1,6 +1,6 @@
 {
   "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
-  "name": "mage2",
+  "name": "mage",
   "rules": {
     "source_file": {
       "type": "REPEAT",

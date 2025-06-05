@@ -5,7 +5,7 @@ SINGLE_COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
 MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 
 program     =  { SOI ~ (incantation | COMMENT)* ~ EOI }
-incantation   =  { conjure | incant | curse | evoke | if_block | loop_block | enchant | cast }
+incantation   =  { conjure | incant | curse | evoke | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast }
 
 enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
@@ -13,7 +13,14 @@ param_list   = { IDENT ~ ("," ~ IDENT)* }
 cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" }
 arg_list     = { value ~ ("," ~ value)* }
 
-if_block    = { "if" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+scry_chain   = { "scry" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" ~ morph_block* ~ lest_block? }
+morph_block  = { "morph" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+lest_block   = { "lest" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+
+channel_block = { "channel" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+chant_block = { "chant" ~ IDENT ~ "in" ~ value ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+recite_block = { "recite" ~ IDENT ~ "from" ~ value ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+
 loop_block  = { "loop" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
 condition   = { IDENT ~ comparator ~ value }
 comparator  = { "==" | "!=" }
@@ -26,4 +33,8 @@ evoke       =  { "evoke" ~ string }
 
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+int         = @{ "-"? ~ DIGIT+ }
+float       = @{ "-"? ~ DIGIT+ ~ "." ~ DIGIT+ }
+double      = @{ "-"? ~ DIGIT+ ~ "." ~ DIGIT+ }
+DIGIT       = _{ '0'..'9' }
 

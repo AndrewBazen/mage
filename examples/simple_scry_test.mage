@@ -1,0 +1,10 @@
+# Test basic scry functionality
+
+conjure test_var = "hello"
+
+# Simple scry block
+scry test_var == "hello" {
+    incant "✅ Scry works! Variable equals hello"
+}
+
+incant "🎉 Basic scry test complete!" 
