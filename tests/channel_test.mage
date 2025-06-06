@@ -1,0 +1,8 @@
+# This test checks if the channel block works correctly
+
+conjure test_var = 0
+
+channel test_var < 10 {
+    incant test_var
+    conjure test_var = test_var + 1
+}

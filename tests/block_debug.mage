@@ -1,0 +1,5 @@
+conjure test = 1
+scry test == 1 {
+    conjure a = 5
+    conjure b = 10
+} 

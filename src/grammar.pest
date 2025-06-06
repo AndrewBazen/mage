@@ -7,34 +7,48 @@ MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 program     =  { SOI ~ (incantation | COMMENT)* ~ EOI }
 incantation   =  { conjure | incant | curse | evoke | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast }
 
-enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ block }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
+block        = { "{" ~ (statement | incantation | COMMENT)* ~ "}" }
 
 cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" }
 arg_list     = { value ~ ("," ~ value)* }
 
-scry_chain   = { "scry" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" ~ morph_block* ~ lest_block? }
-morph_block  = { "morph" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
-lest_block   = { "lest" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+scry_chain   = { "scry" ~ condition ~ block ~ morph_block* ~ lest_block? }
+morph_block  = { "morph" ~ condition ~ block }
+lest_block   = { "lest" ~ block }
 
-channel_block = { "channel" ~ condition ~ "{" ~ (incantation | COMMENT)* ~ "}" }
-chant_block = { "chant" ~ IDENT ~ "in" ~ value ~ "{" ~ (incantation | COMMENT)* ~ "}" }
-recite_block = { "recite" ~ IDENT ~ "from" ~ value ~ "{" ~ (incantation | COMMENT)* ~ "}" }
+channel_block = { "channel" ~ condition ~ block }
+chant_block = { "chant" ~ IDENT ~ "in" ~ value ~ block }
+recite_block = { "recite" ~ IDENT ~ "from" ~ value ~ block }
 
-loop_block  = { "loop" ~ "{" ~ (incantation | COMMENT)* ~ "}" }
-condition   = { IDENT ~ comparator ~ value }
-comparator  = { "==" | "!=" }
-value       = { IDENT | string }
+loop_block  = { "loop" ~ block }
+condition   = { expression ~ comparator ~ expression }
+comparator  = { ">=" | "<=" | "==" | "!=" | ">" | "<" }
+value       = { string | number | boolean | IDENT }
+expression  = { term ~ (add_op ~ term)* }
+term        = { factor ~ (mult_op ~ factor)* }
+factor      = { value | "(" ~ expression ~ ")" }
+add_op      = { "+" | "-" }
+mult_op     = { "*" | "/" | "%" }
 
-conjure     =  { "conjure" ~ IDENT ~ "=" ~ string }
-incant      =  { "incant" ~ string }
+conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression }
+incant      =  { "incant" ~ expression }
 curse       =  { "curse" ~ string }
 evoke       =  { "evoke" ~ string }
 
+// Semicolon-terminated versions for use inside blocks
+conjure_stmt = { "conjure" ~ IDENT ~ "=" ~ expression ~ ";" }
+incant_stmt  = { "incant" ~ expression ~ ";" }
+curse_stmt   = { "curse" ~ string ~ ";" }
+evoke_stmt   = { "evoke" ~ string ~ ";" }
+
+// General statement rule that prioritizes semicolon-terminated statements
+statement = { conjure_stmt | incant_stmt | curse_stmt | evoke_stmt }
+
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
-int         = @{ "-"? ~ DIGIT+ }
-float       = @{ "-"? ~ DIGIT+ ~ "." ~ DIGIT+ }
-double      = @{ "-"? ~ DIGIT+ ~ "." ~ DIGIT+ }
+number      = @{ "-"? ~ DIGIT+ ~ ("." ~ DIGIT+)? }
 DIGIT       = _{ '0'..'9' }
+boolean     = @{ "true" | "false" }
 

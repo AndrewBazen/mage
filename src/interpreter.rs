@@ -8,6 +8,23 @@ pub struct FunctionDef<'i> {
     body: Vec<pest::iterators::Pair<'i, Rule>>,
 }
 
+#[derive(Debug, Clone)]
+enum ExprValue {
+    String(String),
+    Number(f64),
+    Boolean(bool),
+}
+
+impl std::fmt::Display for ExprValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ExprValue::String(s) => write!(f, "{}", s),
+            ExprValue::Number(n) => write!(f, "{}", n),
+            ExprValue::Boolean(b) => write!(f, "{}", b),
+        }
+    }
+}
+
 pub fn interpret<'i>(
     pairs: Pairs<'i, Rule>,
     shell_override: Option<&str>,
@@ -42,53 +59,53 @@ pub fn interpret<'i>(
 }
 
 fn match_incantation<'i>(stmt: pest::iterators::Pair<'i, Rule>, scope: &mut HashMap<String, String>, functions: &mut HashMap<String, FunctionDef<'i>>) {
-    if stmt.as_rule() == Rule::incantation {
-        let mut inner = stmt.into_inner();
-        let stmt = inner.next().unwrap();
-        match stmt.as_rule() {
-            Rule::conjure => handle_conjure(stmt, scope),
-            Rule::incant => handle_incant(stmt, scope),
-            Rule::curse => handle_curse(stmt),
-            Rule::evoke => handle_evoke(stmt, scope, None),
-            Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
-            Rule::channel_block => handle_channel_block(stmt, scope, functions),
-            Rule::chant_block => handle_chant_block(stmt, scope),
-            Rule::recite_block => handle_recite_block(stmt, scope),
-            Rule::loop_block => handle_loop_block(stmt, scope, functions),
-            Rule::enchant => handle_enchant(stmt, functions),
-            Rule::cast => handle_cast(stmt, scope, functions),
-            _ => unreachable!("Unknown inner statement: {:?}", stmt),
+    match stmt.as_rule() {
+        Rule::incantation => {
+            let mut inner = stmt.into_inner();
+            let stmt = inner.next().unwrap();
+            match_incantation(stmt, scope, functions);
         }
-    } else {
-        // Handle direct statements
-        match stmt.as_rule() {
-            Rule::conjure => handle_conjure(stmt, scope),
-            Rule::incant => handle_incant(stmt, scope),
-            Rule::curse => handle_curse(stmt),
-            Rule::evoke => handle_evoke(stmt, scope, None),
-            Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
-            Rule::channel_block => handle_channel_block(stmt, scope, functions),
-            Rule::chant_block => handle_chant_block(stmt, scope),
-            Rule::recite_block => handle_recite_block(stmt, scope),
-            Rule::loop_block => handle_loop_block(stmt, scope, functions),
-            Rule::enchant => handle_enchant(stmt, functions),
-            Rule::cast => handle_cast(stmt, scope, functions),
-            _ => {} // Skip unhandled types like comments or strings
+        Rule::statement => {
+            let mut inner = stmt.into_inner();
+            let stmt = inner.next().unwrap();
+            match_incantation(stmt, scope, functions);
         }
+        Rule::conjure | Rule::conjure_stmt => handle_conjure(stmt, scope),
+        Rule::incant | Rule::incant_stmt => handle_incant(stmt, scope),
+        Rule::curse | Rule::curse_stmt => handle_curse(stmt),
+        Rule::evoke | Rule::evoke_stmt => handle_evoke(stmt, scope, None),
+        Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
+        Rule::channel_block => handle_channel_block(stmt, scope, functions),
+        Rule::chant_block => handle_chant_block(stmt, scope),
+        Rule::recite_block => handle_recite_block(stmt, scope),
+        Rule::loop_block => handle_loop_block(stmt, scope, functions),
+        Rule::enchant => handle_enchant(stmt, functions),
+        Rule::cast => handle_cast(stmt, scope, functions),
+        _ => {} // Skip unhandled types like comments or strings
     }
 }
 
 fn handle_conjure(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, String>) {
     let mut inner = pair.into_inner();
     let ident = inner.next().unwrap().as_str().to_string();
-    let value = inner.next().unwrap().as_str().trim_matches('"').to_string();
-    scope.insert(ident.clone(), value);
+    let expression_pair = inner.next().unwrap();
+    
+    let value = evaluate_expression(expression_pair, scope).to_string();
+    scope.insert(ident, value);
+    // Note: semicolon is automatically handled by the grammar, no need to process it here
 }
 
 fn handle_incant(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, String>) {
-    let raw = pair.into_inner().next().unwrap().as_str().trim_matches('"');
-    let interpolated = interpolate(raw, scope);
-    println!("{}", interpolated);
+    let expression_pair = pair.into_inner().next().unwrap();
+    let result = evaluate_expression(expression_pair, scope);
+    
+    let output = match result {
+        ExprValue::String(s) => interpolate(&s, scope),
+        ExprValue::Number(n) => n.to_string(),
+        ExprValue::Boolean(b) => b.to_string(),
+    };
+    
+    println!("{}", output);
     io::stdout().flush().unwrap();
 }
 
@@ -167,9 +184,11 @@ fn handle_scry_chain<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut Hash
     let scry_cond = inner.next().unwrap();
     let scry_block = inner.next().unwrap();
     
+    let statements: Vec<_> = scry_block.into_inner().collect();
+    
     // Check if scry condition is true
     if eval_condition(scry_cond, scope) {
-        for stmt in scry_block.into_inner() {
+        for stmt in statements {
             match_incantation(stmt, scope, functions);
         }
         return; // Exit early if scry block executed
@@ -262,9 +281,23 @@ fn handle_channel_block<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut H
     let mut inner = pair.into_inner();
     let cond = inner.next().unwrap();
     let block = inner.next().unwrap();
-    if eval_condition(cond, scope) {
-        for stmt in block.into_inner() {
-            match_incantation(stmt, scope, functions);
+    
+    // Collect all statements once, outside the loop
+    let statements: Vec<_> = block.into_inner().collect();
+    
+    let mut iteration_count = 0;
+    while eval_condition(cond.clone(), scope) {
+        iteration_count += 1;
+        
+        // Safety break to prevent infinite loops due to parsing bug
+        if iteration_count > 10 {
+            eprintln!("❌ Channel loop exceeded 10 iterations, breaking to prevent infinite loop");
+            break;
+        }
+        
+        // Execute the collected statements
+        for stmt in &statements {
+            match_incantation(stmt.clone(), scope, functions);
         }
     }
 }
@@ -286,16 +319,146 @@ fn handle_recite_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<St
 
 
 
+fn evaluate_expression(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, String>) -> ExprValue {
+    match pair.as_rule() {
+        Rule::expression => {
+            let mut inner = pair.into_inner();
+            let mut result = evaluate_term(inner.next().unwrap(), scope);
+            
+            while let Some(op) = inner.next() {
+                let term = inner.next().unwrap();
+                let term_val = evaluate_term(term, scope);
+                result = apply_add_op(result, op.as_str(), term_val);
+            }
+            result
+        }
+        _ => {
+            eprintln!("❌ Expected expression, got: {:?}", pair.as_rule());
+            ExprValue::Number(0.0)
+        }
+    }
+}
+
+fn evaluate_term(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, String>) -> ExprValue {
+    let mut inner = pair.into_inner();
+    let mut result = evaluate_factor(inner.next().unwrap(), scope);
+    
+    while let Some(op) = inner.next() {
+        let factor = inner.next().unwrap();
+        let factor_val = evaluate_factor(factor, scope);
+        result = apply_mult_op(result, op.as_str(), factor_val);
+    }
+    result
+}
+
+fn evaluate_factor(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, String>) -> ExprValue {
+    match pair.as_rule() {
+        Rule::factor => {
+            // Factor rule contains the actual value or expression
+            let inner = pair.into_inner().next().unwrap();
+            evaluate_factor(inner, scope)
+        }
+        Rule::value => {
+            let inner_value = pair.into_inner().next().unwrap();
+            match inner_value.as_rule() {
+                Rule::string => ExprValue::String(inner_value.as_str().trim_matches('"').to_string()),
+                Rule::number => ExprValue::Number(inner_value.as_str().parse().unwrap_or(0.0)),
+                Rule::boolean => ExprValue::Boolean(inner_value.as_str() == "true"),
+                Rule::IDENT => {
+                    let var_name = inner_value.as_str();
+                    if let Some(val) = scope.get(var_name) {
+                        // Try to parse as number first, then boolean, then string
+                        if let Ok(num) = val.parse::<f64>() {
+                            ExprValue::Number(num)
+                        } else if val == "true" || val == "false" {
+                            ExprValue::Boolean(val == "true")
+                        } else {
+                            ExprValue::String(val.clone())
+                        }
+                    } else {
+                        ExprValue::String(format!("${{{}}}", var_name))
+                    }
+                }
+                _ => ExprValue::Number(0.0)
+            }
+        }
+        Rule::expression => evaluate_expression(pair, scope),
+        _ => {
+            eprintln!("❌ Unexpected factor: {:?}", pair.as_rule());
+            ExprValue::Number(0.0)
+        }
+    }
+}
+
+fn apply_add_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
+    match (&left, &right) {
+        (ExprValue::Number(l), ExprValue::Number(r)) => {
+            match op {
+                "+" => ExprValue::Number(l + r),
+                "-" => ExprValue::Number(l - r),
+                _ => ExprValue::Number(0.0)
+            }
+        }
+        (ExprValue::String(l), ExprValue::String(r)) if op == "+" => {
+            ExprValue::String(format!("{}{}", l, r))
+        }
+        _ => {
+            eprintln!("❌ Invalid operation: {} {} {}", left, op, right);
+            ExprValue::Number(0.0)
+        }
+    }
+}
+
+fn apply_mult_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
+    match (&left, &right) {
+        (ExprValue::Number(l), ExprValue::Number(r)) => {
+            match op {
+                "*" => ExprValue::Number(l * r),
+                "/" => ExprValue::Number(if *r != 0.0 { l / r } else { 0.0 }),
+                "%" => ExprValue::Number(if *r != 0.0 { l % r } else { 0.0 }),
+                _ => ExprValue::Number(0.0)
+            }
+        }
+        _ => {
+            eprintln!("❌ Invalid operation: {} {} {}", left, op, right);
+            ExprValue::Number(0.0)
+        }
+    }
+}
+
 fn eval_condition<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut HashMap<String, String>) -> bool {
     let mut inner = pair.into_inner();
-    let ident = inner.next().unwrap().as_str();
+    let left_expr = inner.next().unwrap();
     let cmp = inner.next().unwrap().as_str();
-    let val = inner.next().unwrap().as_str().trim_matches('"');
-    let left = scope.get(ident).map(|s| s.as_str()).unwrap_or("");
+    let right_expr = inner.next().unwrap();
+    
+    let left_val = evaluate_expression(left_expr, scope);
+    let right_val = evaluate_expression(right_expr, scope);
+    
     match cmp {
-        "==" => left == val,
-        "!=" => left != val,
+        "==" => compare_values(&left_val, &right_val) == std::cmp::Ordering::Equal,
+        "!=" => compare_values(&left_val, &right_val) != std::cmp::Ordering::Equal,
+        ">" => compare_values(&left_val, &right_val) == std::cmp::Ordering::Greater,
+        "<" => compare_values(&left_val, &right_val) == std::cmp::Ordering::Less,
+        ">=" => {
+            let ord = compare_values(&left_val, &right_val);
+            ord == std::cmp::Ordering::Greater || ord == std::cmp::Ordering::Equal
+        }
+        "<=" => {
+            let ord = compare_values(&left_val, &right_val);
+            ord == std::cmp::Ordering::Less || ord == std::cmp::Ordering::Equal
+        }
         _ => false,
+    }
+}
+
+fn compare_values(left: &ExprValue, right: &ExprValue) -> std::cmp::Ordering {
+    match (left, right) {
+        (ExprValue::Number(l), ExprValue::Number(r)) => l.partial_cmp(r).unwrap_or(std::cmp::Ordering::Equal),
+        (ExprValue::String(l), ExprValue::String(r)) => l.cmp(r),
+        (ExprValue::Boolean(l), ExprValue::Boolean(r)) => l.cmp(r),
+        // Mixed types: convert to strings for comparison
+        _ => left.to_string().cmp(&right.to_string()),
     }
 }
 

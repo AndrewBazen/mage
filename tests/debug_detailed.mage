@@ -1,0 +1,17 @@
+# Detailed debug test
+conjure test_var = 0
+incant "Before loop: $test_var"
+
+# Let's test a single iteration first
+incant "Original test_var: $test_var"
+incant "test_var + 1 evaluates to:"
+incant (test_var + 1)
+conjure test_var = test_var + 1
+incant "After conjure, test_var is: $test_var"
+
+# Now test the condition
+scry test_var < 10 {
+    incant "test_var is indeed < 10, value: $test_var"
+} lest {
+    incant "test_var is NOT < 10, value: $test_var"
+} 

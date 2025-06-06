@@ -1,0 +1,6 @@
+conjure test_var = 0
+
+channel test_var < 3 {
+    incant test_var
+    conjure test_var = test_var + 1
+} 
