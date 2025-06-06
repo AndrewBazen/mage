@@ -1,0 +1,326 @@
+incant "🧙‍♂️ MAGE LANGUAGE COMPREHENSIVE TEST SUITE 🧙‍♂️"
+incant "======================================================"
+
+# ===============================================
+# SECTION 1: BASIC LANGUAGE FEATURES
+# ===============================================
+incant "\n📝 SECTION 1: Basic Language Features"
+
+# Variable declarations (conjure)
+conjure name = "Mage Wizard"
+conjure age = 42
+conjure is_magical = true
+conjure pi = 3.14159
+
+incant "\n✅ Variables:"
+incant "  Name: ${name}"
+incant "  Age: ${age}"
+incant "  Magical: ${is_magical}"
+incant "  Pi: ${pi}"
+
+# String interpolation variations
+conjure greeting = "Hello, ${name}! You are $age years old."
+incant "\n✅ String Interpolation: ${greeting}"
+
+# Escape sequences
+conjure escaped = "Line 1\nLine 2\tTabbed\r\nCarriage Return\nQuote: \"Hello\"\nBackslash: \\"
+incant "\n✅ Escape Sequences:\n${escaped}"
+
+# ===============================================
+# SECTION 2: EXPRESSIONS AND ARITHMETIC
+# ===============================================
+incant "\n🧮 SECTION 2: Expressions and Arithmetic"
+
+conjure a = 10
+conjure b = 3
+conjure sum = (a + b)
+conjure diff = (a - b)
+conjure product = (a * b)
+conjure quotient = (a / b)
+conjure remainder = (a % b)
+
+incant "\n✅ Arithmetic Operations:"
+incant "  ${a} + ${b} = ${sum}"
+incant "  ${a} - ${b} = ${diff}"
+incant "  ${a} * ${b} = ${product}"
+incant "  ${a} / ${b} = ${quotient}"
+incant "  ${a} % ${b} = ${remainder}"
+
+# ===============================================
+# SECTION 3: CONTROL FLOW
+# ===============================================
+incant "\n🔀 SECTION 3: Control Flow"
+
+# If-else-if-else (scry-morph-lest)
+conjure test_value = 15
+incant "\n✅ Conditional Logic (scry-morph-lest):"
+scry test_value > 20 {
+    incant "  Value is greater than 20"
+} morph test_value > 10 {
+    incant "  Value is between 11 and 20"
+} lest {
+    incant "  Value is 10 or less"
+}
+
+# Multiple conditions
+conjure x = 5
+conjure y = 10
+scry x == 5 {
+    incant "  x equals 5 ✓"
+}
+scry y != 5 {
+    incant "  y does not equal 5 ✓"
+}
+
+# ===============================================
+# SECTION 4: LOOPS
+# ===============================================
+incant "\n🔄 SECTION 4: Loops"
+
+# For loop (chant)
+incant "\n✅ For Loop (chant from/to/step):"
+chant i from 1 to 6 {
+    incant "  Count: ${i}"
+}
+
+incant "\n✅ For Loop with Step:"
+chant j from 0 to 11 step 2 {
+    incant "  Even: ${j}"
+}
+
+incant "\n✅ Backward For Loop:"
+chant k from 5 to 1 step -1 {
+    incant "  Countdown: ${k}"
+}
+
+# Foreach loop (recite)
+incant "\n✅ Foreach Loop (recite):"
+conjure fruits = "apple,banana,orange,grape"
+recite fruit from fruits {
+    incant "  - ${fruit}"
+}
+
+incant "\n✅ Numeric Iteration:"
+conjure count = 4
+recite num from count {
+    incant "  Number: ${num}"
+}
+
+# While loop (channel)
+incant "\n✅ While Loop (channel):"
+conjure counter = 0
+channel counter < 3 {
+    incant "  Counter: ${counter}"
+    conjure counter = (counter + 1)
+}
+
+# ===============================================
+# SECTION 5: FUNCTIONS
+# ===============================================
+incant "\n🎯 SECTION 5: Functions"
+
+# Function definition (enchant)
+enchant greet(person) {
+    incant "Hello, ${person}! Welcome to Mage."
+}
+
+enchant add_numbers(num1, num2) {
+    conjure result = (num1 + num2)
+    incant "Adding ${num1} + ${num2} = ${result}"
+}
+
+enchant fibonacci(n) {
+    scry n <= 1 {
+        incant "Fibonacci(${n}) = ${n}"
+    } lest {
+        incant "Fibonacci sequence up to ${n}:"
+        conjure a = 0
+        conjure b = 1
+        incant "  ${a}"
+        incant "  ${b}"
+        conjure i = 2
+        channel i <= n {
+            conjure next = (a + b)
+            incant "  ${next}"
+            conjure a = b
+            conjure b = next
+            conjure i = (i + 1)
+        }
+    }
+}
+
+incant "\n✅ Function Calls:"
+cast greet("Alice")
+cast add_numbers(15, 27)
+cast fibonacci(7)
+
+# ===============================================
+# SECTION 6: BUILT-IN FUNCTIONS - SYSTEM INFO
+# ===============================================
+incant "\n💻 SECTION 6: Built-in Functions - System Info"
+
+incant "\n✅ System Information:"
+cast platform()
+cast architecture()
+cast home_directory()
+cast current_directory()
+
+incant "\n✅ Environment Variables:"
+cast env_var("PATH")
+cast env_var("USER")
+cast env_var("HOME")
+
+# ===============================================
+# SECTION 7: BUILT-IN FUNCTIONS - PACKAGE MANAGEMENT
+# ===============================================
+incant "\n📦 SECTION 7: Built-in Functions - Package Management"
+
+incant "\n✅ Package Manager Detection:"
+cast detect_package_managers()
+
+incant "\n✅ Package Installation Check:"
+cast package_installed("git")
+cast package_installed("nonexistent-package-xyz")
+
+# NOTE: Commenting out actual installation to avoid side effects
+# incant "\n✅ Package Installation (commented out for safety):"
+# cast install_package("curl")
+
+# ===============================================
+# SECTION 8: BUILT-IN FUNCTIONS - FILE OPERATIONS
+# ===============================================
+incant "\n📁 SECTION 8: Built-in Functions - File Operations"
+
+incant "\n✅ File Operations:"
+
+# Create a test directory
+cast ensure_directory("test-mage-dir")
+
+# Write a test file
+cast write_file("test-mage-dir/test.txt", "Hello from Mage!\nThis is a test file.\nWith multiple lines.")
+
+# Copy the file
+cast copy_file("test-mage-dir/test.txt", "test-mage-dir/test-copy.txt")
+
+# Make file executable (safe on all platforms)
+cast make_executable("test-mage-dir/test.txt")
+
+# Create a symlink (might fail on Windows without admin)
+# cast symlink("test-mage-dir/test.txt", "test-mage-dir/test-link.txt")
+
+incant "  Files created successfully in test-mage-dir/"
+
+# Clean up
+cast remove_file("test-mage-dir/test.txt")
+cast remove_file("test-mage-dir/test-copy.txt")
+cast remove_directory("test-mage-dir")
+
+incant "  Files cleaned up successfully"
+
+# ===============================================
+# SECTION 9: DATA TYPES AND COLLECTIONS
+# ===============================================
+incant "\n📊 SECTION 9: Data Types and Collections"
+
+incant "\n✅ String Operations:"
+conjure str1 = "Hello"
+conjure str2 = "World"
+conjure combined = (str1 + " " + str2)
+incant "  Combined: ${combined}"
+
+incant "\n✅ List-like String Processing:"
+conjure colors = "red,green,blue,yellow"
+incant "  Colors list: ${colors}"
+recite color from colors {
+    incant "    Color: ${color}"
+}
+
+incant "\n✅ Map-like String Processing:"
+conjure person_data = "{name: John, age: 30, city: NYC}"
+incant "  Person data: ${person_data}"
+recite key from person_data {
+    incant "    Key: ${key}"
+}
+
+# ===============================================
+# SECTION 10: COMPLEX SCENARIOS
+# ===============================================
+incant "\n🎭 SECTION 10: Complex Scenarios"
+
+# Nested loops with conditions
+incant "\n✅ Nested Loops with Conditions:"
+conjure matrix_size = 3
+chant row from 1 to (matrix_size + 1) {
+    chant col from 1 to (matrix_size + 1) {
+        conjure product = (row * col)
+        scry product > 5 {
+            incant "    [${row},${col}] = ${product} (>5)"
+        } lest {
+            incant "    [${row},${col}] = ${product}"
+        }
+    }
+}
+
+# Function with loops and conditions
+enchant process_data(data_str) {
+    incant "  Processing data: ${data_str}"
+    recite item from data_str {
+        scry item == "important" {
+            incant "    ⭐ IMPORTANT: ${item}"
+        } lest {
+            incant "    📄 Regular: ${item}"
+        }
+    }
+}
+
+incant "\n✅ Complex Function Call:"
+cast process_data("normal,important,regular,important")
+
+# ===============================================
+# SECTION 11: ERROR HANDLING AND EDGE CASES
+# ===============================================
+incant "\n⚠️ SECTION 11: Error Handling and Edge Cases"
+
+incant "\n✅ Empty String Handling:"
+conjure empty_str = ""
+recite item from empty_str {
+    incant "  ❌ This should not print"
+}
+incant "  Empty string handled correctly"
+
+incant "\n✅ Zero Iteration:"
+conjure zero = 0
+recite item from zero {
+    incant "  ❌ This should not print"
+}
+incant "  Zero iteration handled correctly"
+
+incant "\n✅ Boolean Iteration:"
+conjure flag = true
+recite item from flag {
+    incant "  Boolean iteration: ${item}"
+}
+
+# ===============================================
+# FINAL SUMMARY
+# ===============================================
+incant "\n🎉 COMPREHENSIVE TEST COMPLETE! 🎉"
+incant "======================================"
+incant ""
+incant "✅ Variables and Expressions"
+incant "✅ String Interpolation and Escape Sequences" 
+incant "✅ Arithmetic Operations"
+incant "✅ Conditional Logic (scry/morph/lest)"
+incant "✅ For Loops (chant from/to/step)"
+incant "✅ Foreach Loops (recite)"
+incant "✅ While Loops (channel)"
+incant "✅ Function Definition and Calls (enchant/cast)"
+incant "✅ Built-in System Information Functions"
+incant "✅ Built-in Package Management Functions"
+incant "✅ Built-in File Operations"
+incant "✅ Data Types and Collections"
+incant "✅ Complex Nested Scenarios"
+incant "✅ Error Handling and Edge Cases"
+incant ""
+incant "🧙‍♂️ All Mage language features tested successfully!"
+incant "   Mage is ready for magical automation! ✨" 

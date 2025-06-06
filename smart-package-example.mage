@@ -1,0 +1,104 @@
+#!/usr/bin/env mage
+# Smart Cross-Platform Development Environment Setup
+
+incant "🔍 Detecting system configuration..."
+
+# Automatic system detection
+conjure system = {
+    platform: platform(),                    # "windows", "macos", "linux"
+    distro: linux_distribution(),            # "ubuntu", "fedora", "arch", null
+    available_pms: detect_package_managers(), # ["apt", "snap", "pip"]
+    primary_pm: get_primary_package_manager() # "apt"
+}
+
+incant "Platform: $system.platform"
+incant "Distribution: $system.distro"
+incant "Available package managers: $system.available_pms"
+incant "Primary package manager: $system.primary_pm"
+
+# Smart package installation - each package uses the best available manager
+incant "📦 Installing development tools..."
+
+# These will automatically use the right package manager and package names
+install_packages([
+    "git",           # apt: git, brew: git, choco: git, winget: Git.Git
+    "nodejs",        # apt: nodejs, brew: node, choco: nodejs, winget: OpenJS.NodeJS  
+    "python3",       # apt: python3, brew: python@3.11, choco: python3
+    "vim",           # apt: vim, brew: vim, choco: vim
+    "curl",          # apt: curl, brew: curl, choco: curl
+    "wget"           # apt: wget, brew: wget, choco: wget (or skip on Windows)
+])
+
+# Handle special cases where packages might not be available
+scry package_available("docker") {
+    install_package("docker")
+    incant "✅ Docker installed"
+} lest {
+    incant "⚠️  Docker not available via package manager"
+    scry platform() == "windows" {
+        incant "💡 Consider installing Docker Desktop manually"
+    }
+}
+
+# Language-specific packages (automatically detects pip, npm, etc.)
+incant "📚 Installing language packages..."
+
+scry package_manager_available("pip") {
+    # Use pip for Python packages
+    install_package_with("requests", "pip")
+    install_package_with("black", "pip")
+}
+
+scry package_manager_available("npm") {
+    # Use npm for Node packages  
+    install_package_with("typescript", "npm")
+    install_package_with("eslint", "npm")
+}
+
+# Platform-specific optimizations
+scry system.platform == "linux" {
+    # Linux-specific tools
+    scry system.distro == "ubuntu" {
+        install_packages(["build-essential", "software-properties-common"])
+    } morph system.distro == "fedora" {
+        install_packages(["gcc", "gcc-c++", "make"])
+    } morph system.distro == "arch" {
+        install_packages(["base-devel"])
+    }
+} morph system.platform == "macos" {
+    # macOS-specific tools
+    scry package_manager_available("brew") {
+        install_packages(["coreutils", "findutils", "gnu-sed"])
+    }
+} morph system.platform == "windows" {
+    # Windows-specific tools
+    install_packages(["powershell-core", "windows-terminal"])
+}
+
+# Smart fallbacks for missing packages
+conjure required_tools = ["git", "nodejs", "python3"]
+chant tool in required_tools {
+    scry not package_installed(tool) {
+        incant "❌ Failed to install $tool via package manager"
+        
+        scry tool == "nodejs" {
+            incant "💡 Try installing from: https://nodejs.org"
+        } morph tool == "python3" {
+            incant "💡 Try installing from: https://python.org"
+        } morph tool == "git" {
+            incant "💡 Try installing from: https://git-scm.com"
+        }
+    } lest {
+        incant "✅ $tool is installed"
+    }
+}
+
+# Detailed system report
+incant "📊 System Report:"
+incant "═══════════════════"
+chant pm in system.available_pms {
+    conjure pm_info = package_manager_info(pm)
+    incant "$pm: $pm_info.version"
+}
+
+incant "🎉 Development environment setup complete!" 

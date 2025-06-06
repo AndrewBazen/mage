@@ -1,4 +1,4 @@
-use crate::Rule;
+use crate::{Rule, builtins};
 use pest::iterators::Pairs;
 use std::collections::HashMap;
 use std::io::{self, Write};
@@ -13,6 +13,8 @@ enum ExprValue {
     String(String),
     Number(f64),
     Boolean(bool),
+    List(Vec<ExprValue>),
+    Map(HashMap<String, ExprValue>),
 }
 
 impl std::fmt::Display for ExprValue {
@@ -21,6 +23,8 @@ impl std::fmt::Display for ExprValue {
             ExprValue::String(s) => write!(f, "{}", s),
             ExprValue::Number(n) => write!(f, "{}", n),
             ExprValue::Boolean(b) => write!(f, "{}", b),
+            ExprValue::List(l) => write!(f, "[{}]", l.iter().map(|v| v.to_string()).collect::<Vec<String>>().join(", ")),
+            ExprValue::Map(m) => write!(f, "{{{}}}", m.iter().map(|(k, v)| format!("{}: {}", k, v.to_string())).collect::<Vec<String>>().join(", ")),
         }
     }
 }
@@ -45,8 +49,8 @@ pub fn interpret<'i>(
                         Rule::evoke => handle_evoke(stmt, scope, shell_override),
                         Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
                         Rule::channel_block => handle_channel_block(stmt, scope, functions),
-                        Rule::chant_block => handle_chant_block(stmt, scope),
-                        Rule::recite_block => handle_recite_block(stmt, scope),
+                        Rule::chant_block => handle_chant_block(stmt, scope, functions),
+                        Rule::recite_block => handle_recite_block(stmt, scope, functions),
                         Rule::loop_block => handle_loop_block(stmt, scope, functions),
                         Rule::enchant => handle_enchant(stmt, functions),
                         Rule::cast => handle_cast(stmt, scope, functions),
@@ -76,8 +80,8 @@ fn match_incantation<'i>(stmt: pest::iterators::Pair<'i, Rule>, scope: &mut Hash
         Rule::evoke | Rule::evoke_stmt => handle_evoke(stmt, scope, None),
         Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
         Rule::channel_block => handle_channel_block(stmt, scope, functions),
-        Rule::chant_block => handle_chant_block(stmt, scope),
-        Rule::recite_block => handle_recite_block(stmt, scope),
+        Rule::chant_block => handle_chant_block(stmt, scope, functions),
+        Rule::recite_block => handle_recite_block(stmt, scope, functions),
         Rule::loop_block => handle_loop_block(stmt, scope, functions),
         Rule::enchant => handle_enchant(stmt, functions),
         Rule::cast => handle_cast(stmt, scope, functions),
@@ -103,6 +107,8 @@ fn handle_incant(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, 
         ExprValue::String(s) => interpolate(&s, scope),
         ExprValue::Number(n) => n.to_string(),
         ExprValue::Boolean(b) => b.to_string(),
+        ExprValue::List(l) => l.iter().map(|v| v.to_string()).collect::<Vec<String>>().join(", "),
+        ExprValue::Map(m) => m.iter().map(|(k, v)| format!("{}: {}", k, v.to_string())).collect::<Vec<String>>().join(", "),
     };
     
     println!("{}", output);
@@ -260,11 +266,48 @@ fn handle_cast<'i>(
         if args_pair.as_rule() == Rule::arg_list {
             args = args_pair
                 .into_inner()
-                .map(|a| a.as_str().trim_matches('"').to_string())
+                .map(|a| {
+                    let arg_str = a.as_str();
+                    // Handle different argument types
+                    if arg_str.starts_with('"') && arg_str.ends_with('"') {
+                        // String literal - remove quotes, process escapes, and interpolate
+                        let unquoted = arg_str.trim_matches('"');
+                        let escaped = process_escape_sequences(unquoted);
+                        interpolate(&escaped, parent_scope)
+                    } else if let Ok(_) = arg_str.parse::<f64>() {
+                        // Number literal - keep as is
+                        arg_str.to_string()
+                    } else if arg_str == "true" || arg_str == "false" {
+                        // Boolean literal - keep as is
+                        arg_str.to_string()
+                    } else {
+                        // Variable reference - look up in scope
+                        parent_scope.get(arg_str).cloned().unwrap_or_else(|| {
+                            eprintln!("⚠️  Warning: Variable '{}' not found, using literal value", arg_str);
+                            arg_str.to_string()
+                        })
+                    }
+                })
                 .collect();
         }
     }
-    if let Some(func) = functions.get(name) {
+    
+    // Check if it's a built-in function first
+    if builtins::is_builtin(name) {
+        match builtins::call_builtin(name, args) {
+            Ok(result) => {
+                // For functions that return values, we'd want to assign them to a variable
+                // For now, just print non-empty results
+                match result {
+                    builtins::BuiltinValue::None => {}, // Don't print anything
+                    builtins::BuiltinValue::Boolean(true) => {}, // Success, no output needed
+                    _ => println!("{}", result), // Print other results
+                }
+            }
+            Err(e) => eprintln!("❌ Error calling {}: {}", name, e),
+        }
+    } else if let Some(func) = functions.get(name) {
+        // User-defined function
         let mut scope = parent_scope.clone();
         for (param, arg) in func.params.iter().zip(args.iter()) {
             scope.insert(param.clone(), arg.clone());
@@ -302,22 +345,184 @@ fn handle_channel_block<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut H
     }
 }
 
-fn handle_chant_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, String>) {
+fn handle_chant_block<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut HashMap<String, String>, functions: &mut HashMap<String, FunctionDef<'i>>) {
     let mut inner = pair.into_inner();
-    let ident = inner.next().unwrap().as_str().to_string();
-    let value = inner.next().unwrap().as_str().trim_matches('"').to_string();
-    scope.insert(ident.clone(), value);
+    let loop_var = inner.next().unwrap().as_str().to_string();
+    let start_expr = inner.next().unwrap();
+    let end_expr = inner.next().unwrap();
+    
+    // Check if there's a step expression (optional)
+    let mut step_expr = None;
+    let mut block = None;
+    
+    // Parse remaining parts
+    while let Some(part) = inner.next() {
+        if part.as_rule() == Rule::expression {
+            step_expr = Some(part);
+        } else if part.as_rule() == Rule::block {
+            block = Some(part);
+            break;
+        }
+    }
+    
+    let block = block.expect("Expected block in chant statement");
+    
+    // Collect statements from the block
+    let statements: Vec<_> = block.into_inner().collect();
+    
+    // Evaluate expressions
+    let start_val = evaluate_expression(start_expr, scope);
+    let end_val = evaluate_expression(end_expr, scope);
+    let step_val = if let Some(step) = step_expr {
+        evaluate_expression(step, scope)
+    } else {
+        ExprValue::Number(1.0) // Default step is 1
+    };
+    
+    // Convert to numbers
+    let start_num = match start_val {
+        ExprValue::Number(n) => n as i32,
+        ExprValue::String(s) => s.parse().unwrap_or(0),
+        ExprValue::List(l) => l.len() as i32,
+        ExprValue::Map(m) => m.len() as i32,
+        _ => {
+            eprintln!("❌ Start value must be a number");
+            return;
+        }
+    };
+    
+    let end_num = match end_val {
+        ExprValue::Number(n) => n as i32,
+        ExprValue::String(s) => s.parse().unwrap_or(0),
+        ExprValue::List(l) => l.len() as i32,
+        ExprValue::Map(m) => m.len() as i32,
+        _ => {
+            eprintln!("❌ End value must be a number");
+            return;
+        }
+    };
+    
+    let step_num = match step_val {
+        ExprValue::Number(n) => n as i32,
+        ExprValue::String(s) => s.parse().unwrap_or(1),
+        ExprValue::List(l) => l.len() as i32,
+        ExprValue::Map(m) => m.len() as i32,
+        _ => {
+            eprintln!("❌ Step value must be a number");
+            return;
+        }
+    };
+    
+    // Prevent infinite loops
+    if step_num == 0 {
+        eprintln!("❌ Step cannot be zero");
+        return;
+    }
+    
+    // Execute the loop
+    if step_num > 0 {
+        // Forward iteration
+        let mut current = start_num;
+        while current < end_num {
+            // Create a new scope for this iteration
+            let mut loop_scope = scope.clone();
+            loop_scope.insert(loop_var.clone(), current.to_string());
+            
+            // Execute all statements in the block
+            for stmt in &statements {
+                match_incantation(stmt.clone(), &mut loop_scope, functions);
+            }
+            
+            current += step_num;
+        }
+    } else {
+        // Backward iteration (negative step)
+        let mut current = start_num;
+        while current > end_num {
+            // Create a new scope for this iteration
+            let mut loop_scope = scope.clone();
+            loop_scope.insert(loop_var.clone(), current.to_string());
+            
+            // Execute all statements in the block
+            for stmt in &statements {
+                match_incantation(stmt.clone(), &mut loop_scope, functions);
+            }
+            
+            current += step_num; // step_num is negative
+        }
+    }
 }
 
-fn handle_recite_block(pair: pest::iterators::Pair<Rule>, scope: &mut HashMap<String, String>) {
+fn handle_recite_block<'i>(pair: pest::iterators::Pair<'i, Rule>, scope: &mut HashMap<String, String>, functions: &mut HashMap<String, FunctionDef<'i>>) {
+    // setup recite as a foreach loop
+    // recite loop_var in list_expr { block }
     let mut inner = pair.into_inner();
-    let ident = inner.next().unwrap().as_str().to_string();
-    let value = inner.next().unwrap().as_str().trim_matches('"').to_string();
-    scope.insert(ident.clone(), value);
+    let loop_var = inner.next().unwrap().as_str().to_string();
+    let list_expr = inner.next().unwrap();
+    let block = inner.next().unwrap();
+    
+    // evaluate the list_expr
+    let list_val = evaluate_factor(list_expr, scope);
+    // if the list_val is a string, split it by commas and iterate over the items
+    match list_val {
+        ExprValue::String(s) => {
+            if s.trim().is_empty() {
+                // Don't iterate over empty strings
+                return;
+            }
+            let items = s.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
+            // Filter out empty items that result from splitting strings like ",,,"
+            let items: Vec<&str> = items.into_iter().filter(|item| !item.is_empty()).collect();
+            for item in items {
+                let mut loop_scope = scope.clone();
+                loop_scope.insert(loop_var.clone(), item.to_string());
+                for stmt in block.clone().into_inner() {
+                    match_incantation(stmt, &mut loop_scope, functions);
+                }
+            }
+        }
+        // if the list_val is a number, iterate over the range
+        ExprValue::Number(n) => {
+            for i in 0..(n as i32) {
+                let mut loop_scope = scope.clone();
+                loop_scope.insert(loop_var.clone(), i.to_string());
+                for stmt in block.clone().into_inner() {
+                    match_incantation(stmt, &mut loop_scope, functions);
+                }
+            }
+        }
+        // if the list_val is a boolean, iterate over the range
+        ExprValue::Boolean(_b) => {
+            for i in 0..1 {
+                let mut loop_scope = scope.clone();
+                loop_scope.insert(loop_var.clone(), i.to_string());
+                for stmt in block.clone().into_inner() {
+                    match_incantation(stmt, &mut loop_scope, functions);
+                }
+            }
+        }
+        // if the list_val is a list, iterate over the items
+        ExprValue::List(l) => {
+            for item in l {
+                let mut loop_scope = scope.clone();
+                loop_scope.insert(loop_var.clone(), item.to_string());
+                for stmt in block.clone().into_inner() {
+                    match_incantation(stmt, &mut loop_scope, functions);
+                }
+            }
+        }
+        // if the list_val is a map, iterate over the items
+        ExprValue::Map(m) => {
+            for (key, _value) in m {
+                let mut loop_scope = scope.clone();
+                loop_scope.insert(loop_var.clone(), key.to_string());
+                for stmt in block.clone().into_inner() {
+                    match_incantation(stmt, &mut loop_scope, functions);
+                }
+            }
+        }
+    }
 }
-
-
-
 
 fn evaluate_expression(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, String>) -> ExprValue {
     match pair.as_rule() {
@@ -361,17 +566,28 @@ fn evaluate_factor(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, St
         Rule::value => {
             let inner_value = pair.into_inner().next().unwrap();
             match inner_value.as_rule() {
-                Rule::string => ExprValue::String(inner_value.as_str().trim_matches('"').to_string()),
+                Rule::string => ExprValue::String(process_escape_sequences(inner_value.as_str().trim_matches('"'))),
                 Rule::number => ExprValue::Number(inner_value.as_str().parse().unwrap_or(0.0)),
                 Rule::boolean => ExprValue::Boolean(inner_value.as_str() == "true"),
+                Rule::list => ExprValue::List(inner_value.into_inner().map(|v| evaluate_expression(v, scope)).collect()),
+                Rule::map => ExprValue::Map(inner_value.into_inner().map(|v| {
+                    let mut parts = v.into_inner();
+                    let key = parts.next().unwrap().as_str();
+                    let value = parts.next().unwrap();
+                    (key.to_string(), evaluate_expression(value, scope))
+                }).collect()),
                 Rule::IDENT => {
                     let var_name = inner_value.as_str();
                     if let Some(val) = scope.get(var_name) {
-                        // Try to parse as number first, then boolean, then string
+                        // Try to parse as number first, then boolean, then string or list or map
                         if let Ok(num) = val.parse::<f64>() {
                             ExprValue::Number(num)
                         } else if val == "true" || val == "false" {
                             ExprValue::Boolean(val == "true")
+                        } else if val.starts_with('[') && val.ends_with(']') {
+                            ExprValue::List(val[1..val.len()-1].split(',').map(|s| s.trim()).map(|s| ExprValue::String(s.to_string())).collect())
+                        } else if val.starts_with('{') && val.ends_with('}') {
+                            ExprValue::Map(val[1..val.len()-1].split(',').map(|s| s.trim()).map(|s| s.split(':').map(|s| s.trim()).collect::<Vec<&str>>()).map(|s| (s[0].to_string(), ExprValue::String(s[1].to_string()))).collect())
                         } else {
                             ExprValue::String(val.clone())
                         }
@@ -401,6 +617,12 @@ fn apply_add_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
         }
         (ExprValue::String(l), ExprValue::String(r)) if op == "+" => {
             ExprValue::String(format!("{}{}", l, r))
+        }
+        (ExprValue::List(l), ExprValue::List(r)) if op == "+" => {
+            ExprValue::List(l.iter().chain(r.iter()).cloned().collect())
+        }
+        (ExprValue::Map(l), ExprValue::Map(r)) if op == "+" => {
+            ExprValue::Map(l.iter().chain(r.iter()).map(|(k, v)| (k.clone(), v.clone())).collect())
         }
         _ => {
             eprintln!("❌ Invalid operation: {} {} {}", left, op, right);
@@ -457,9 +679,83 @@ fn compare_values(left: &ExprValue, right: &ExprValue) -> std::cmp::Ordering {
         (ExprValue::Number(l), ExprValue::Number(r)) => l.partial_cmp(r).unwrap_or(std::cmp::Ordering::Equal),
         (ExprValue::String(l), ExprValue::String(r)) => l.cmp(r),
         (ExprValue::Boolean(l), ExprValue::Boolean(r)) => l.cmp(r),
+        (ExprValue::List(l), ExprValue::List(r)) => {
+            let mut l_iter = l.iter();
+            let mut r_iter = r.iter();
+            while let (Some(l_val), Some(r_val)) = (l_iter.next(), r_iter.next()) {
+                let ord = compare_values(l_val, r_val);
+                if ord != std::cmp::Ordering::Equal {
+                    return ord;
+                }
+            }
+            std::cmp::Ordering::Equal
+        }
+        (ExprValue::Map(l), ExprValue::Map(r)) => {
+            // compare the keys
+            let mut l_keys = l.keys().collect::<Vec<&String>>();
+            let mut r_keys = r.keys().collect::<Vec<&String>>();
+            l_keys.sort();
+            r_keys.sort();
+            l_keys.cmp(&r_keys)
+        }
         // Mixed types: convert to strings for comparison
         _ => left.to_string().cmp(&right.to_string()),
     }
+}
+
+fn process_escape_sequences(text: &str) -> String {
+    let mut result = String::new();
+    let mut chars = text.chars().peekable();
+    
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            if let Some(&next_ch) = chars.peek() {
+                match next_ch {
+                    '\\' => {
+                        result.push('\\');
+                        chars.next();
+                    }
+                    'n' => {
+                        result.push('\n');
+                        chars.next();
+                    }
+                    't' => {
+                        result.push('\t');
+                        chars.next();
+                    }
+                    'r' => {
+                        result.push('\r');
+                        chars.next();
+                    }
+                    '"' => {
+                        result.push('"');
+                        chars.next();
+                    }
+                    '\'' => {
+                        result.push('\'');
+                        chars.next();
+                    }
+                    '0' => {
+                        result.push('\0');
+                        chars.next();
+                    }
+                    _ => {
+                        // Unknown escape sequence, keep the backslash and next char
+                        result.push('\\');
+                        result.push(next_ch);
+                        chars.next();
+                    }
+                }
+            } else {
+                // Backslash at end of string
+                result.push('\\');
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    
+    result
 }
 
 fn interpolate<'i>(text: &str, scope: &mut HashMap<String, String>) -> String {

@@ -1,0 +1,95 @@
+#!/usr/bin/env mage
+# Dotfiles Maintenance Script
+# Keep your dotfiles fresh and synced ✨
+
+conjure dotfiles_dir = "$HOME/.dotfiles"
+
+# Function to update dotfiles repository
+enchant update_dotfiles() {
+    incant "🔄 Updating dotfiles repository..."
+    
+    # Pull latest changes from dotfiles directory
+    evoke "cd $dotfiles_dir && git pull origin main"
+    
+    # Show status
+    evoke "cd $dotfiles_dir && git status --short"
+    
+    incant "✅ Dotfiles updated!"
+}
+
+# Function to backup current configurations
+enchant backup_current_config() {
+    incant "💾 Creating backup of current configurations..."
+    
+    conjure backup_dir = "$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
+    evoke "mkdir -p $backup_dir"
+    
+    # Backup common config files  
+    evoke "cp -r $HOME/.config/nvim $backup_dir/ 2>/dev/null || true"
+    evoke "cp $HOME/.bashrc $backup_dir/ 2>/dev/null || true"
+    evoke "cp $HOME/.zshrc $backup_dir/ 2>/dev/null || true"
+    evoke "cp $HOME/.gitconfig $backup_dir/ 2>/dev/null || true"
+    
+    incant "✅ Backup created at: $backup_dir"
+}
+
+# Function to sync changes to dotfiles repo
+enchant sync_to_repo() {
+    incant "📤 Syncing local changes to dotfiles repository..."
+    
+    # Add all changes and check for commits
+    evoke "cd $dotfiles_dir && git add -A"
+    
+    # Check if there are changes to commit
+    evoke "cd $dotfiles_dir && git diff --cached --quiet"
+    if $? != 0 {
+        conjure commit_msg = "Update dotfiles - $(date)"
+        evoke "cd $dotfiles_dir && git commit -m '$commit_msg'"
+        evoke "cd $dotfiles_dir && git push origin main"
+        incant "✅ Changes synced to repository!"
+    } else {
+        incant "ℹ️ No changes to sync"
+    }
+}
+
+# Function to check dotfiles health
+enchant check_health() {
+    incant "🩺 Checking dotfiles health..."
+    
+    # Check if symlinks are valid
+    evoke "find $HOME -maxdepth 1 -type l -exec ls -la {} \\;"
+    
+    # Check git status
+    evoke "cd $dotfiles_dir && git status"
+    
+    incant "✅ Health check complete!"
+}
+
+# Main menu
+incant "🧙‍♂️ Dotfiles Maintenance Wizard"
+incant "Choose your action:"
+incant "1. Update dotfiles from repository"
+incant "2. Backup current configurations"
+incant "3. Sync changes to repository"
+incant "4. Check dotfiles health"
+incant "5. All of the above"
+
+# Simple menu handling (in a real script, you'd want proper input handling)
+conjure choice = "1"  # Default action for demo
+
+if choice == "1" {
+    cast update_dotfiles()
+} else if choice == "2" {
+    cast backup_current_config()
+} else if choice == "3" {
+    cast sync_to_repo()
+} else if choice == "4" {
+    cast check_health()
+} else if choice == "5" {
+    cast backup_current_config()
+    cast update_dotfiles()
+    cast check_health()
+    cast sync_to_repo()
+}
+
+incant "🎉 Maintenance complete!" 

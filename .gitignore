@@ -33,6 +33,9 @@ Cargo.lock # include if you're publishing a library, remove if it's a binary pro
 *.test-result
 *.test.json
 /test-outputs/
+/tests/
+%LOCALAPPDATA%/
+
 
 # === Custom config ===
 .mageconfig

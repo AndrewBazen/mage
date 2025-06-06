@@ -1,0 +1,50 @@
+# Dotfiles Configuration for Mage Scripts
+# This config file should be placed in your dotfiles repository
+
+# Default shell configuration
+shell=bash
+
+# Dotfiles-specific settings
+dotfiles_repo=https://github.com/your-username/dotfiles.git
+dotfiles_dir=~/.dotfiles
+backup_dir=~/.config-backups
+
+# OS-specific package managers
+macos_package_manager=brew
+linux_debian_package_manager=apt
+linux_arch_package_manager=pacman
+linux_fedora_package_manager=dnf
+windows_package_manager=choco
+
+# Essential packages to install
+essential_packages=git,neovim,tmux,fzf,ripgrep,curl,wget
+
+# Development tools
+dev_packages=nodejs,python3,rustc,go
+
+# Optional packages
+optional_packages=docker,kubernetes-cli,terraform
+
+# Symlink configurations
+# Format: source_path=target_path
+symlinks_bash=bash/.bashrc=~/.bashrc
+symlinks_zsh=zsh/.zshrc=~/.zshrc
+symlinks_git=git/.gitconfig=~/.gitconfig
+symlinks_nvim=nvim/=~/.config/nvim/
+symlinks_tmux=tmux/.tmux.conf=~/.tmux.conf
+
+# Backup patterns (files/directories to backup before symlinking)
+backup_patterns=~/.bashrc,~/.zshrc,~/.gitconfig,~/.config/nvim,~/.tmux.conf
+
+# Post-installation commands
+post_install_unix=source ~/.bashrc
+post_install_windows=refreshenv
+
+# Git configuration
+git_user_name=Your Name
+git_user_email=your.email@example.com
+
+# Custom environment variables
+EDITOR=nvim
+BROWSER=firefox
+TERMINAL=alacritty 

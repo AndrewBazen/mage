@@ -1,0 +1,57 @@
+#!/usr/bin/env mage
+
+# 🎯 Interactive Package Selection Demo
+# Shows multiple package options and user selection
+
+incant "🎯 Interactive Package Selection Demo"
+incant "======================================="
+
+incant "📦 Using package manager:"
+cast get_primary_package_manager()
+
+incant ""
+incant "🔍 Let's search for packages with multiple matches..."
+
+# First, let's see what packages are available for 'vim'
+incant ""
+incant "📋 Available packages matching 'vim':"
+cast list_packages("vim")
+
+incant ""
+incant "📋 Available packages matching 'python':"
+cast list_packages("python")
+
+incant ""
+incant "📋 Available packages matching 'git':"
+cast list_packages("git")
+
+incant ""
+incant "✨ Interactive Installation Demo:"
+incant "When you run cast install_package(vim), you will see:"
+incant "┌─────────────────────────────────────────┐"
+incant "│ 🔍 Found 5 packages matching 'vim':    │"
+incant "│                                         │"
+incant "│   1: Vim (vim.vim)                     │"
+incant "│   2: Vim Cheat Sheet (9WZDNCRDMCWR)    │"
+incant "│   3: Neovim (Neovim.Neovim)           │"
+incant "│   4: Neovim Nightly (Neovim.Neovim...)│"
+incant "│   5: Vieb (Jelmerro.Vieb)             │"
+incant "│                                         │"
+incant "│ Choose a package (1-5, or 0 to cancel):│"
+incant "└─────────────────────────────────────────┘"
+
+incant ""
+incant "🎯 Benefits of Interactive Selection:"
+incant "• 👀 See all available options before installing"
+incant "• 🎯 Choose the exact package you want"
+incant "• 🚫 Cancel installation if unsure"
+incant "• 🤖 Auto-install if only one match found"
+incant "• 📦 Works with all package managers"
+
+incant ""
+incant "🧪 To test interactive installation:"
+incant "  Uncomment and run: cast install_package(vim)"
+incant "  (This will show the selection menu)"
+
+incant "# Uncomment to test actual interactive installation:"
+incant "# cast install_package(vim)" 

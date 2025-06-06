@@ -1,0 +1,160 @@
+#!/usr/bin/env mage
+# Environment-Specific Dotfiles Configuration
+# Handles different setups for work, personal, and various machines
+
+##
+# This script demonstrates how to use mage for environment-specific
+# dotfiles configuration using .mageconfig files
+##
+
+conjure hostname = "$(hostname)"
+conjure username = "$(whoami)"
+
+incant "🏠 Setting up environment-specific configuration..."
+incant "📍 Hostname: $hostname"
+incant "👤 User: $username"
+
+# Function to detect environment type
+enchant detect_environment() {
+    # Check for work indicators
+    evoke "echo '$hostname' | grep -i 'corp\\|work\\|office\\|company'"
+    if $? == 0 {
+        conjure env_type = "work"
+    } else {
+        evoke "echo '$username' | grep -i 'work\\|corp'"
+        if $? == 0 {
+            conjure env_type = "work"
+        } else {
+            conjure env_type = "personal"
+        }
+    }
+    
+    incant "🏷️ Environment detected: $env_type"
+}
+
+# Function to setup work-specific configurations
+enchant setup_work_environment() {
+    incant "💼 Setting up work environment..."
+    
+    # Work-specific git config
+    evoke "git config --global user.name 'Your Work Name'"
+    evoke "git config --global user.email 'work@company.com'"
+    evoke "git config --global core.sshCommand 'ssh -i ~/.ssh/work_rsa'"
+    
+    # Work-specific aliases
+    evoke "echo 'alias work-vpn=\"sudo openvpn /path/to/work.ovpn\"' >> ~/.bash_aliases"
+    evoke "echo 'alias work-ssh=\"ssh -i ~/.ssh/work_rsa\"' >> ~/.bash_aliases"
+    
+    # Work-specific environment variables
+    evoke "echo 'export WORK_ENV=true' >> ~/.bashrc"
+    evoke "echo 'export COMPANY_DOMAIN=company.com' >> ~/.bashrc"
+    
+    # Install work-specific tools
+    evoke "which kubectl >/dev/null 2>&1 || curl -LO 'https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl'"
+    
+    incant "✅ Work environment configured!"
+}
+
+# Function to setup personal environment
+enchant setup_personal_environment() {
+    incant "🏠 Setting up personal environment..."
+    
+    # Personal git config
+    evoke "git config --global user.name 'Your Personal Name'"
+    evoke "git config --global user.email 'personal@gmail.com'"
+    evoke "git config --global core.sshCommand 'ssh -i ~/.ssh/id_rsa'"
+    
+    # Personal aliases
+    evoke "echo 'alias ll=\"ls -alF\"' >> ~/.bash_aliases"
+    evoke "echo 'alias la=\"ls -A\"' >> ~/.bash_aliases"
+    evoke "echo 'alias l=\"ls -CF\"' >> ~/.bash_aliases"
+    
+    # Personal environment variables
+    evoke "echo 'export PERSONAL_ENV=true' >> ~/.bashrc"
+    
+    # Install personal tools
+    evoke "which steam >/dev/null 2>&1 || echo 'Consider installing Steam for gaming'"
+    
+    incant "✅ Personal environment configured!"
+}
+
+# Function to setup machine-specific configurations
+enchant setup_machine_specific() {
+    incant "🖥️ Setting up machine-specific configurations..."
+    
+    # Different configs for different machines
+    if hostname == "laptop" {
+        incant "💻 Configuring for laptop..."
+        evoke "echo 'export MACHINE_TYPE=laptop' >> ~/.bashrc"
+        
+        # Laptop-specific settings (power management, etc.)
+        evoke "echo 'alias battery=\"upower -i /org/freedesktop/UPower/devices/battery_BAT0\"' >> ~/.bash_aliases"
+        
+    } else if hostname == "desktop" {
+        incant "🖥️ Configuring for desktop..."
+        evoke "echo 'export MACHINE_TYPE=desktop' >> ~/.bashrc"
+        
+        # Desktop-specific settings
+        evoke "echo 'alias monitors=\"xrandr --listmonitors\"' >> ~/.bash_aliases"
+        
+    } else if hostname == "server" {
+        incant "🗄️ Configuring for server..."
+        evoke "echo 'export MACHINE_TYPE=server' >> ~/.bashrc"
+        
+        # Server-specific settings
+        evoke "echo 'alias services=\"systemctl list-units --type=service\"' >> ~/.bash_aliases"
+        evoke "echo 'alias logs=\"journalctl -f\"' >> ~/.bash_aliases"
+    }
+    
+    incant "✅ Machine-specific configuration complete!"
+}
+
+# Function to create environment-specific config files
+enchant create_env_configs() {
+    incant "📝 Creating environment-specific configuration files..."
+    
+    conjure dotfiles_dir = "$HOME/.dotfiles"
+    
+    # Create work-specific .mageconfig
+    evoke "cat > \"$dotfiles_dir/.mageconfig.work\" << 'EOF'
+# Work Environment Configuration
+shell=bash
+git_user_name=Work Name
+git_user_email=work@company.com
+ssh_key=~/.ssh/work_rsa
+proxy_settings=http://proxy.company.com:8080
+work_vpn_config=/path/to/work.ovpn
+essential_packages=kubectl,docker,terraform,aws-cli
+EOF"
+
+    # Create personal .mageconfig
+    evoke "cat > \"$dotfiles_dir/.mageconfig.personal\" << 'EOF'
+# Personal Environment Configuration
+shell=zsh
+git_user_name=Personal Name
+git_user_email=personal@gmail.com
+ssh_key=~/.ssh/id_rsa
+essential_packages=git,neovim,tmux,fzf,ripgrep
+optional_packages=steam,discord,spotify
+EOF"
+
+    incant "✅ Environment-specific configs created!"
+}
+
+# Main execution
+cast detect_environment()
+
+# Setup based on environment
+if env_type == "work" {
+    cast setup_work_environment()
+} else {
+    cast setup_personal_environment()
+}
+
+cast setup_machine_specific()
+cast create_env_configs()
+
+incant "🎉 Environment-specific setup complete!"
+incant "💡 You can switch environments by copying the appropriate .mageconfig file:"
+incant "   cp ~/.dotfiles/.mageconfig.work ~/.dotfiles/.mageconfig"
+incant "   cp ~/.dotfiles/.mageconfig.personal ~/.dotfiles/.mageconfig" 

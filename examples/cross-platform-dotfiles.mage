@@ -1,0 +1,219 @@
+#!/usr/bin/env mage
+# Cross-Platform Dotfiles Management Script
+# Works on Windows, macOS, and Linux ✨
+
+##
+# This script demonstrates how to write cross-platform dotfiles
+# management using mage's built-in shell detection
+##
+
+conjure user_name = "Your Name"
+incant "🧙‍♂️ Welcome to the Cross-Platform Dotfiles Manager, $user_name!"
+
+# Function to detect operating system
+enchant detect_os() {
+    # Try Windows detection first
+    evoke "ver 2>nul"
+    if $? == 0 {
+        conjure os_type = "Windows"
+        conjure home_dir = "$USERPROFILE"
+        conjure dotfiles_dir = "$USERPROFILE\\.dotfiles"
+        conjure config_dir = "$LOCALAPPDATA"
+    } else {
+        # Unix-like systems
+        evoke "uname -s 2>/dev/null"
+        conjure os_info = "$(uname -s)"
+        
+        if os_info == "Darwin" {
+            conjure os_type = "macOS"
+        } else {
+            conjure os_type = "Linux"
+        }
+        
+        conjure home_dir = "$HOME"
+        conjure dotfiles_dir = "$HOME/.dotfiles"
+        conjure config_dir = "$HOME/.config"
+    }
+    
+    incant "🔍 Detected OS: $os_type"
+    incant "🏠 Home directory: $home_dir"
+    incant "📁 Dotfiles directory: $dotfiles_dir"
+}
+
+# Function to check if a directory exists (cross-platform)
+enchant dir_exists(dir_path) {
+    if os_type == "Windows" {
+        evoke "if exist \"$dir_path\" (echo exists) else (echo missing)"
+    } else {
+        evoke "test -d '$dir_path' && echo exists || echo missing"
+    }
+}
+
+# Function to create directory (cross-platform)
+enchant create_dir(dir_path) {
+    incant "📁 Creating directory: $dir_path"
+    
+    if os_type == "Windows" {
+        evoke "if not exist \"$dir_path\" mkdir \"$dir_path\""
+    } else {
+        evoke "mkdir -p '$dir_path'"
+    }
+}
+
+# Function to create symbolic link (cross-platform)
+enchant create_symlink(source, target) {
+    incant "🔗 Creating symlink: $source -> $target"
+    
+    if os_type == "Windows" {
+        # Windows mklink (requires admin privileges for directory links)
+        evoke "mklink \"$target\" \"$source\" 2>nul || mklink /D \"$target\" \"$source\""
+    } else {
+        evoke "ln -sf '$source' '$target'"
+    }
+}
+
+# Function to install essential packages
+enchant install_packages() {
+    incant "📦 Installing essential packages for $os_type..."
+    
+    if os_type == "Windows" {
+        # Check for Chocolatey
+        evoke "choco --version 2>nul"
+        if $? != 0 {
+            incant "🍫 Chocolatey not found. Please install it first:"
+            incant "   Run as Administrator: Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
+        } else {
+            evoke "choco install -y git neovim fzf ripgrep"
+        }
+        
+    } else if os_type == "macOS" {
+        # Check for Homebrew
+        evoke "which brew >/dev/null 2>&1"
+        if $? != 0 {
+            incant "🍺 Installing Homebrew..."
+            evoke "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        }
+        evoke "brew install git neovim tmux fzf ripgrep"
+        
+    } else {
+        # Linux - detect package manager
+        evoke "which apt >/dev/null 2>&1"
+        if $? == 0 {
+            evoke "sudo apt update && sudo apt install -y git neovim tmux fzf ripgrep"
+        } else {
+            evoke "which pacman >/dev/null 2>&1"
+            if $? == 0 {
+                evoke "sudo pacman -S --noconfirm git neovim tmux fzf ripgrep"
+            } else {
+                evoke "which dnf >/dev/null 2>&1"
+                if $? == 0 {
+                    evoke "sudo dnf install -y git neovim tmux fzf ripgrep"
+                }
+            }
+        }
+    }
+}
+
+# Function to setup shell configuration
+enchant setup_shell() {
+    incant "🐚 Setting up shell configuration..."
+    
+    if os_type == "Windows" {
+        # PowerShell profile
+        evoke "echo $PROFILE"
+        conjure ps_profile = "$PROFILE"
+        cast create_symlink("$dotfiles_dir\\powershell\\profile.ps1", ps_profile)
+        
+    } else {
+        # Bash configuration
+        cast create_symlink("$dotfiles_dir/bash/.bashrc", "$home_dir/.bashrc")
+        
+        # Check if zsh is available
+        evoke "which zsh >/dev/null 2>&1"
+        if $? == 0 {
+            cast create_symlink("$dotfiles_dir/zsh/.zshrc", "$home_dir/.zshrc")
+        }
+    }
+}
+
+# Function to setup editor configuration
+enchant setup_editor() {
+    incant "📝 Setting up editor configuration..."
+    
+    if os_type == "Windows" {
+        conjure nvim_config = "$LOCALAPPDATA\\nvim"
+        cast create_dir(nvim_config)
+        cast create_symlink("$dotfiles_dir\\nvim", nvim_config)
+    } else {
+        cast create_dir("$config_dir")
+        cast create_symlink("$dotfiles_dir/nvim", "$config_dir/nvim")
+    }
+}
+
+# Function to setup Git configuration
+enchant setup_git() {
+    incant "🌱 Setting up Git configuration..."
+    
+    cast create_symlink("$dotfiles_dir/git/.gitconfig", "$home_dir/.gitconfig")
+    
+    # Set up global gitignore
+    if os_type == "Windows" {
+        cast create_symlink("$dotfiles_dir\\git\\.gitignore_global", "$home_dir\\.gitignore_global")
+    } else {
+        cast create_symlink("$dotfiles_dir/git/.gitignore_global", "$home_dir/.gitignore_global")
+    }
+}
+
+# Function to check dotfiles repository
+enchant check_dotfiles_repo() {
+    incant "🔍 Checking dotfiles repository..."
+    
+    conjure repo_status = "missing"
+    cast dir_exists(dotfiles_dir)
+    
+    # If dotfiles directory doesn't exist, suggest cloning
+    if repo_status == "missing" {
+        incant "📁 Dotfiles directory not found!"
+        incant "🔧 Please clone your dotfiles repository first:"
+        if os_type == "Windows" {
+            incant "   git clone <your-repo-url> $USERPROFILE\\.dotfiles"
+        } else {
+            incant "   git clone <your-repo-url> ~/.dotfiles"
+        }
+        return
+    }
+    
+    # Check git status if it's a git repository
+    if os_type == "Windows" {
+        evoke "cd /d \"$dotfiles_dir\" && git status 2>nul"
+    } else {
+        evoke "cd '$dotfiles_dir' && git status 2>/dev/null"
+    }
+}
+
+# Main execution
+incant "🚀 Starting cross-platform dotfiles setup..."
+
+cast detect_os()
+cast check_dotfiles_repo()
+
+# Uncomment these lines when you have your dotfiles repository ready:
+# cast install_packages()
+# cast setup_shell()
+# cast setup_editor()
+# cast setup_git()
+
+incant "✅ Cross-platform dotfiles setup complete!"
+incant "🎉 Your magical development environment is ready!"
+
+# Platform-specific next steps
+if os_type == "Windows" {
+    incant "💡 Windows Notes:"
+    incant "   - Restart PowerShell to apply changes"
+    incant "   - Some symlinks may require Administrator privileges"
+    incant "   - Consider using Windows Terminal for better experience"
+} else {
+    incant "💡 Unix Notes:"
+    incant "   - Run 'source ~/.bashrc' or restart terminal"
+    incant "   - Check that all symlinks are working: ls -la ~/"
+} 

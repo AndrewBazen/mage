@@ -1,0 +1,52 @@
+#!/usr/bin/env mage
+
+# 🔍 Dynamic Package Search Demo
+# Shows intelligent package searching and installation
+
+incant "🔍 Dynamic Package Search Demo"
+incant "================================"
+
+# Show detected package manager
+incant "📦 Detected package manager:"
+cast get_primary_package_manager()
+
+incant ""
+incant "🧪 Testing dynamic package search..."
+incant "(Note: This will search but NOT actually install)"
+
+# Test common packages that should exist
+incant ""
+incant "🔍 Searching for 'vim'..."
+# In a real scenario, this would search and install
+# cast install_package("vim")
+
+incant "🔍 Searching for 'curl'..."
+# cast install_package("curl")
+
+incant "🔍 Searching for 'git'..."
+# cast install_package("git")
+
+incant ""
+incant "✨ How Dynamic Search Works:"
+incant "1. 🔍 Search package repository for exact name"
+incant "2. 📋 Parse results to find correct package ID"
+incant "3. 📦 Install using the found package name"
+incant "4. 🔄 Fallback to hardcoded mappings if search fails"
+
+incant ""
+incant "🎯 Benefits:"
+incant "• Works with ANY package in the repository"
+incant "• Handles platform-specific naming automatically"
+incant "• No need to maintain mapping databases"
+incant "• Always uses latest repository data"
+
+incant ""
+incant "Example search commands per manager:"
+incant "• apt: apt search '^package$'"
+incant "• brew: brew search '^package$'"
+incant "• winget: winget search package"
+incant "• choco: choco search package --exact"
+
+incant ""
+incant "🚀 Ready to install packages dynamically!"
+incant "(Uncomment install_package calls above to test)" 

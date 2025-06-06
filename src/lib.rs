@@ -4,6 +4,7 @@ extern crate pest_derive;
 use std::collections::HashMap;
 
 pub mod bin;
+pub mod builtins;
 pub mod config;
 pub mod interpreter;
 pub mod parser;

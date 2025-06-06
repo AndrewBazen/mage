@@ -1,0 +1,98 @@
+#!/usr/bin/env mage
+# 🧙‍♂️ Cross-Platform Dotfiles Setup with Built-in Functions
+# This shows how Mage solves real automation problems
+
+incant "🧙‍♂️ Magical Dotfiles Setup"
+incant "=========================="
+
+# System detection
+incant "🔍 Detecting system..."
+cast platform()
+cast architecture()
+
+incant "Home directory:"
+cast home_directory()
+
+# Package manager setup
+incant ""
+incant "📦 Setting up package management..."
+incant "Primary package manager:"
+cast get_primary_package_manager()
+
+# Create dotfiles structure
+incant ""
+incant "📁 Creating dotfiles directory structure..."
+cast ensure_directory("dotfiles")
+cast ensure_directory("dotfiles/configs")
+cast ensure_directory("dotfiles/scripts")
+cast ensure_directory("dotfiles/backups")
+
+incant "✅ Directory structure created"
+
+# File operations
+incant ""
+incant "📄 Setting up configuration files..."
+
+# Create sample config files
+cast write_file("dotfiles/configs/bashrc", "# Mage-generated .bashrc\nexport PATH=$PATH:$HOME/.local/bin\nalias ll=ls -la\n")
+cast write_file("dotfiles/configs/vimrc", "# Mage-generated .vimrc\nset number\nset relativenumber\nset tabstop=4\nset shiftwidth=4\nset expandtab\n")
+cast write_file("dotfiles/configs/gitconfig", "# Mage-generated .gitconfig\n[user]\n    name = Your Name\n    email = your.email@example.com\n[core]\n    editor = vim\n")
+
+# Check if files were created
+cast file_exists("dotfiles/configs/bashrc")
+cast file_exists("dotfiles/configs/vimrc")
+cast file_exists("dotfiles/configs/gitconfig")
+
+# Create setup script
+incant ""
+incant "⚙️ Setting up scripts..."
+cast write_file("dotfiles/scripts/setup.sh", "#!/bin/bash\n\n# Mage-generated setup script\necho Setting up dotfiles...\n\n# Create symlinks\nln -sf $(pwd)/configs/bashrc ~/.bashrc\nln -sf $(pwd)/configs/vimrc ~/.vimrc\nln -sf $(pwd)/configs/gitconfig ~/.gitconfig\n\necho Dotfiles setup complete!\n")
+
+# Cross-platform executable handling
+incant "🐧 Making script executable (Unix/macOS)"
+cast make_executable("dotfiles/scripts/setup.sh")
+cast is_executable("dotfiles/scripts/setup.sh")
+
+# Symlink operations (the real magic!)
+incant ""
+incant "🔗 Creating symbolic links..."
+
+# These work cross-platform without shell wrappers!
+# cast symlink("dotfiles/configs/bashrc", ".bashrc")
+# cast symlink("dotfiles/configs/vimrc", ".vimrc") 
+# cast symlink("dotfiles/configs/gitconfig", ".gitconfig")
+
+incant "⚠️  Symlink operations commented out for safety"
+incant "   Uncomment the lines above to create actual symlinks"
+
+# File operations without shell commands
+incant ""
+incant "📋 File operations completed:"
+cast directory_exists("dotfiles")
+cast directory_exists("dotfiles/configs") 
+cast directory_exists("dotfiles/scripts")
+
+# Environment information
+incant ""
+incant "🌍 Environment setup:"
+cast env_var("SHELL", "default-shell")
+cast env_var("EDITOR", "default-editor")
+
+# Package installation (commented for safety)
+incant ""
+incant "📦 Package installation (commented for safety):"
+incant "   # cast install_package('git')"
+incant "   # cast install_package('vim')"
+incant "   # cast install_package('curl')"
+
+# Summary
+incant ""
+incant "🎉 Dotfiles setup complete!"
+incant "✨ This used ZERO shell command wrappers!"
+incant "🧙‍♂️ Pure cross-platform Mage magic!"
+
+# Cleanup (optional)
+incant ""
+incant "🧹 Cleanup (removing test files)..."
+cast remove_directory("dotfiles")
+incant "✅ Cleanup complete" 

@@ -1,0 +1,129 @@
+#!/usr/bin/env mage
+# 🧙‍♂️ Mage Built-in Functions Demo
+# This demonstrates the powerful cross-platform built-in functions
+
+incant "🔮 Mage Built-in Functions Demo"
+incant "=================================="
+
+# System Information
+incant ""
+incant "📊 System Information:"
+cast platform()
+cast architecture()
+cast home_directory()
+cast current_directory()
+
+# Environment Variables
+incant ""
+incant "🌍 Environment:"
+cast env_var("USER", "unknown")
+cast env_var("HOME")
+cast env_var("PATH")
+
+# Package Manager Detection
+incant ""
+incant "📦 Package Management:"
+cast detect_package_managers()
+cast get_primary_package_manager()
+
+# Check specific package managers
+scry cast package_manager_available("brew") {
+    incant "✅ Homebrew is available"
+} lest {
+    incant "❌ Homebrew not found"
+}
+
+scry cast package_manager_available("apt") {
+    incant "✅ APT is available"
+} lest {
+    incant "❌ APT not found"
+}
+
+# File System Operations
+incant ""
+incant "📁 File System Operations:"
+
+# Create test directory
+conjure test_dir = "mage-test"
+incant "Creating test directory: $test_dir"
+cast ensure_directory(test_dir)
+
+# Check if directory exists
+scry cast directory_exists(test_dir) {
+    incant "✅ Test directory created successfully"
+} lest {
+    incant "❌ Failed to create test directory"
+}
+
+# Create a test file
+conjure test_file = "mage-test/test.txt"
+incant "Creating test file: $test_file"
+evoke "echo 'Hello from Mage!' > '$test_file'"
+
+# Check if file exists
+scry cast file_exists(test_file) {
+    incant "✅ Test file created successfully"
+} lest {
+    incant "❌ Test file was not created"
+}
+
+# Copy file
+conjure backup_file = "mage-test/test-backup.txt"
+incant "Copying file to: $backup_file"
+cast copy_file(test_file, backup_file)
+
+# Make executable (on Unix systems)
+scry cast platform() != "windows" {
+    incant "Making file executable..."
+    cast make_executable(test_file)
+    
+    scry cast is_executable(test_file) {
+        incant "✅ File is now executable"
+    } lest {
+        incant "❌ Failed to make file executable"
+    }
+}
+
+# Symlink operations
+conjure link_path = "mage-test/test-link.txt"
+incant "Creating symlink: $link_path"
+cast symlink(test_file, link_path)
+
+scry cast file_exists(link_path) {
+    incant "✅ Symlink created successfully"
+} lest {
+    incant "❌ Failed to create symlink"
+}
+
+# Package Management Demo (commented out to avoid installing packages)
+incant ""
+incant "📦 Package Management Demo:"
+incant "(Package installation commands are commented out for safety)"
+
+# Uncomment these lines to test package installation:
+# scry cast package_installed("git") {
+#     incant "✅ Git is already installed"
+# } lest {
+#     incant "📦 Installing Git..."
+#     cast install_package("git")
+# }
+
+# Network Operations Demo (commented out to avoid downloads)
+incant ""
+incant "🌐 Network Operations Demo:"
+incant "(Download commands are commented out for safety)"
+
+# Uncomment to test file download:
+# conjure download_file = "$test_dir/downloaded.txt"
+# incant "Downloading test file..."
+# cast download("https://httpbin.org/robots.txt", download_file)
+
+# Cleanup
+incant ""
+incant "🧹 Cleanup:"
+incant "Removing test directory: $test_dir"
+evoke "rm -rf '$test_dir' 2>/dev/null || rmdir /s /q '$test_dir' 2>nul"
+
+incant ""
+incant "🎉 Built-in Functions Demo Complete!"
+incant "✨ Mage provides cross-platform automation without shell wrappers!" 
