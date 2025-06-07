@@ -18,7 +18,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ]; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ]; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -194,7 +194,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ] ; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -234,7 +234,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ]; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -256,7 +256,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ]; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -302,7 +302,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if [ ! command -v rustup &>/dev/null ]; then
+          if (! command -v rustup &>/dev/null); then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
