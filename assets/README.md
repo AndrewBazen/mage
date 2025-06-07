@@ -8,7 +8,7 @@ This directory contains assets for the Mage language project, including icons, i
 The primary Mage language icon (64x64 pixels) featuring a magical wizard hat design.
 
 **Used in:**
-- VSCode extension file association
+- VSCode extension file association (via separate extension repository)
 - Documentation website favicon and branding
 - GitHub repository social preview
 - Release assets and packaging
@@ -16,16 +16,16 @@ The primary Mage language icon (64x64 pixels) featuring a magical wizard hat des
 ### **Icon Locations**
 
 1. **Source**: `assets/icons/mage64.png`
-2. **VSCode Extension**: `editor-support/vscode/icons/mage64.png` (copied by CI)
+2. **VSCode Extension**: Managed in separate repository that pulls from this repo
 3. **Documentation Site**: `site/assets/icons/mage64.png` (copied by CI)
 
 ### **Automated Integration**
 
-The icon is automatically copied to appropriate locations by GitHub Actions:
+The icon is automatically used by GitHub Actions:
 
-- **CI Workflow**: Tests VSCode extension with icon
+- **CI Workflow**: Tests core mage functionality
 - **Documentation Workflow**: Copies icon to website and adds favicon
-- **VSCode Extension Workflow**: Packages extension with icon
+- **VSCode Extension**: Handled in separate repository with its own workflow
 - **Release Workflow**: Includes icon in release assets
 
 ### **File Association**
@@ -37,10 +37,15 @@ The icon is used for:
 
 ### **Usage in VSCode**
 
+The VSCode extension is maintained in a separate repository that:
+1. Pulls language files from this repository
+2. Builds and publishes the extension independently
+3. Uses the icon from this repository for file associations
+
 When the Mage VSCode extension is installed:
-1. `.mage` files will display the wizard hat icon
-2. The extension itself uses the icon in the marketplace
-3. File explorer shows the icon for Mage-related files
+- `.mage` files will display the wizard hat icon
+- The extension itself uses the icon in the marketplace
+- File explorer shows the icon for Mage-related files
 
 ### **Documentation Website**
 
@@ -55,7 +60,13 @@ The icon appears as:
 To use a different icon:
 1. Replace `assets/icons/mage64.png` with your icon (64x64 PNG recommended)
 2. Ensure the file maintains the same name and format
-3. GitHub Actions will automatically use the new icon in all locations
+3. GitHub Actions will automatically use the new icon in documentation
+4. The VSCode extension repository will pull the updated icon on its next sync
+
+## 🔗 Related Repositories
+
+- **VSCode Extension**: Separate repository that pulls from `editor-support/vscode/`
+- **Main Language**: This repository contains the core language and assets
 
 ## 🎯 Design Guidelines
 

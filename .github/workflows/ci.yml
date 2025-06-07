@@ -166,31 +166,6 @@ jobs:
         
         echo "✅ Package workflow tests passed!"
 
-  vscode-extension-test:
-    name: VSCode Extension Test
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Copy icon to extension directory
-      run: |
-        cp assets/icons/mage64.png editor-support/vscode/icons/mage64.png
-    
-    - name: Test extension configuration
-      working-directory: editor-support/vscode
-      run: |
-        # Validate package.json
-        node -e "require('./package.json')"
-        echo "✅ VSCode extension package.json valid"
-        
-        # Check if icon exists
-        [ -f "icons/mage64.png" ] && echo "✅ Icon file exists" || (echo "❌ Icon file missing" && exit 1)
-
   example-tests:
     name: Example Script Tests
     runs-on: ubuntu-latest

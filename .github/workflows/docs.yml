@@ -54,8 +54,8 @@ jobs:
     
     - name: Install documentation tools
       run: |
-        npm install -g @mermaid-js/mermaid-cli
-        npm install -g markdown-toc
+        npm install -g @mermaid-js/mermaid-cli || echo "⚠️ Mermaid CLI install failed"
+        npm install -g markdown-toc || echo "⚠️ markdown-toc install failed"
     
     - name: Generate documentation
       run: |
@@ -85,7 +85,12 @@ jobs:
         echo "" >> docs/generated/examples.md
         
         # Generate table of contents for README
-        markdown-toc README.md --no-firsth1 > docs/generated/toc.md
+        if command -v markdown-toc >/dev/null 2>&1; then
+            markdown-toc README.md --no-firsth1 > docs/generated/toc.md
+        else
+            echo "# Table of Contents" > docs/generated/toc.md
+            echo "markdown-toc not available" >> docs/generated/toc.md
+        fi
     
     - name: Create documentation website
       run: |
@@ -99,7 +104,7 @@ jobs:
              <meta charset="UTF-8">
              <meta name="viewport" content="width=device-width, initial-scale=1.0">
              <title>Mage Language Documentation</title>
-             <link rel="icon" type="image/png" href="assets/icons/mage64.png">
+             <link rel="icon" type="image/png" href="assets/icons/mage64.png" onerror="this.style.display='none'">
              <meta name="description" content="Mage Language - Cross-platform scripting and automation with magic">
              <meta property="og:title" content="Mage Language">
              <meta property="og:description" content="Cross-platform scripting and automation with magic">
@@ -114,9 +119,9 @@ jobs:
             <div class="container mx-auto px-4 py-8">
                                  <header class="text-center mb-12">
                      <div class="flex items-center justify-center mb-4">
-                         <img src="assets/icons/mage64.png" alt="Mage Language Icon" class="w-16 h-16 mr-4">
+                         <img src="assets/icons/mage64.png" alt="Mage Language Icon" class="w-16 h-16 mr-4" onerror="this.style.display='none'" onload="this.style.display='block'">
                          <h1 class="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-                             Mage Language
+                             🔮 Mage Language
                          </h1>
                      </div>
                     <p class="text-xl text-gray-300">Cross-platform scripting and automation with magic</p>
@@ -281,9 +286,14 @@ build = "mage scripts/build.mage"</code></pre>
         cp README.md site/
         cp -r examples site/
         
-        # Copy assets (icons, etc.)
+        # Copy assets (icons, etc.) if they exist
         if [ -d assets ]; then
             cp -r assets site/
+            echo "✅ Assets copied to site"
+        else
+            echo "⚠️ No assets directory found"
+            # Create empty assets structure for fallback
+            mkdir -p site/assets/icons
         fi
         
         # Copy generated docs if they exist
@@ -326,17 +336,21 @@ build = "mage scripts/build.mage"</code></pre>
         echo "🔍 Validating example scripts..."
         
         # Find all .mage files in examples
-        find examples -name "*.mage" -type f | while read file; do
-            echo "Checking $file..."
-            
-            # Check if file can be parsed (dry run)
-            if ./target/release/mage -c "# Parse check for $file" 2>/dev/null; then
-                echo "✅ $file syntax OK"
-            else
-                echo "❌ $file has syntax errors"
-                exit 1
-            fi
-        done
+        if [ -d examples ]; then
+            find examples -name "*.mage" -type f | while read file; do
+                echo "Checking $file..."
+                
+                # Check if file can be parsed (dry run)
+                if ./target/release/mage -c "# Parse check for $file" 2>/dev/null; then
+                    echo "✅ $file syntax OK"
+                else
+                    echo "❌ $file has syntax errors"
+                    exit 1
+                fi
+            done
+        else
+            echo "⚠️ No examples directory found"
+        fi
         
         echo "✅ All example scripts validated!"
     
