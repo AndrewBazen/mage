@@ -1,0 +1,89 @@
+# Example mage.toml - Project Manifest
+# This file defines your project and its dependencies
+
+[package]
+name = "my-awesome-project"
+version = "1.0.0"
+description = "An awesome project built with mage"
+author = "Your Name <your.email@example.com>"
+license = "MIT"
+keywords = ["mage", "automation", "scripting"]
+repository = "https://github.com/yourusername/my-awesome-project"
+homepage = "https://yourusername.github.io/my-awesome-project"
+
+# Production dependencies
+[dependencies]
+# System packages (auto-detected package manager)
+git = { version = "latest", source = "auto" }
+nodejs = { version = ">=18.0.0", source = "auto" }
+python3 = { version = "^3.9.0", source = "auto" }
+
+# Language-specific packages
+typescript = { version = "latest", source = "npm" }
+requests = { version = ">=2.25.0", source = "pip" }
+serde = { version = "1.0", source = "cargo" }
+
+# Git dependencies
+my-custom-tool = { 
+    version = "1.0.0", 
+    source = { git = { url = "https://github.com/user/my-custom-tool.git", rev = "v1.0.0" } }
+}
+
+# Local path dependencies
+local-library = { 
+    version = "dev", 
+    source = { path = "../local-library" }
+}
+
+# Direct URL dependencies
+binary-tool = { 
+    version = "2.1.0", 
+    source = { url = "https://releases.example.com/binary-tool-v2.1.0.tar.gz" }
+}
+
+# Platform-specific dependencies
+[dependencies.windows-only]
+version = "1.0.0"
+source = "auto"
+platform = "windows"
+
+[dependencies.macos-only]
+version = "1.0.0"
+source = "auto"
+platform = "macos"
+
+[dependencies.linux-only]
+version = "1.0.0"
+source = "auto"
+platform = "linux"
+
+# Development dependencies (only installed with --dev flag)
+[dev-dependencies]
+curl = { version = "latest", source = "auto" }
+jq = { version = "latest", source = "auto" }
+pytest = { version = ">=6.0.0", source = "pip" }
+eslint = { version = "latest", source = "npm" }
+
+# Optional dependencies
+[optional-dependencies]
+docker = { version = "latest", source = "auto", optional = true }
+kubernetes = { version = "latest", source = "auto", optional = true }
+
+# Project scripts
+[scripts]
+setup = "mage scripts/setup.mage"
+build = "mage scripts/build.mage"
+test = "mage scripts/test.mage"
+deploy = "mage scripts/deploy.mage"
+clean = "mage scripts/clean.mage"
+format = "mage scripts/format.mage"
+lint = "mage scripts/lint.mage"
+
+# Custom scripts for different environments
+[scripts.dev]
+start = "mage scripts/dev-server.mage"
+watch = "mage scripts/watch.mage"
+
+[scripts.prod]
+start = "mage scripts/prod-server.mage"
+monitor = "mage scripts/monitor.mage" 

@@ -1,95 +1,70 @@
 {
+  "Hello World": {
+    "prefix": "hello",
+    "body": [
+      "incant \"Hello, magical world!\""
+    ],
+    "description": "Print Hello World in mage"
+  },
   "Variable Declaration": {
     "prefix": "conjure",
     "body": [
       "conjure ${1:variable_name} = ${2:value}"
     ],
-    "description": "Create a new variable"
+    "description": "Declare a variable with conjure"
   },
-  "Output": {
+  "Print Statement": {
     "prefix": "incant",
     "body": [
       "incant \"${1:message}\""
     ],
-    "description": "Output a message"
-  },
-  "Error": {
-    "prefix": "curse",
-    "body": [
-      "curse \"${1:error_message}\""
-    ],
-    "description": "Output an error and exit"
-  },
-  "Shell Command": {
-    "prefix": "evoke",
-    "body": [
-      "evoke \"${1:command}\""
-    ],
-    "description": "Execute a shell command"
-  },
-  "Function Definition": {
-    "prefix": "enchant",
-    "body": [
-      "enchant ${1:function_name}(${2:parameters}) {",
-      "\t${3:// function body}",
-      "}"
-    ],
-    "description": "Define a function"
+    "description": "Print a message with incant"
   },
   "Function Call": {
     "prefix": "cast",
     "body": [
       "cast ${1:function_name}(${2:arguments})"
     ],
-    "description": "Call a function"
+    "description": "Call a function with cast"
   },
-  "Scry Statement": {
+  "If Statement": {
     "prefix": "scry",
     "body": [
       "scry ${1:condition} {",
-      "\t${2:// scry body}",
+      "    ${2:// code}",
       "}"
     ],
-    "description": "Scry statement (magical if)"
+    "description": "If statement with scry"
   },
-  "Scry-Lest Statement": {
+  "If-Else Statement": {
     "prefix": "scrylest",
     "body": [
       "scry ${1:condition} {",
-      "\t${2:// scry body}",
+      "    ${2:// if true}",
       "} lest {",
-      "\t${3:// lest body}",
+      "    ${3:// if false}",
       "}"
     ],
-    "description": "Scry-lest statement (magical if-else)"
+    "description": "If-else statement with scry-lest"
   },
-  "Scry-Morph-Lest Statement": {
+  "If-Else-If Statement": {
     "prefix": "scrymorph",
     "body": [
-      "scry ${1:condition} {",
-      "\t${2:// scry body}",
-      "} morph ${3:other_condition} {",
-      "\t${4:// morph body}",
+      "scry ${1:condition1} {",
+      "    ${2:// first condition}",
+      "} morph ${3:condition2} {",
+      "    ${4:// second condition}",
       "} lest {",
-      "\t${5:// lest body}",
+      "    ${5:// else}",
       "}"
     ],
-    "description": "Scry-morph-lest statement (magical if-else if-else)"
-  },
-  "Loop": {
-    "prefix": "loop",
-    "body": [
-      "loop {",
-      "\t${1:// loop body}",
-      "}"
-    ],
-    "description": "Basic loop (3 iterations)"
+    "description": "If-else-if statement with scry-morph-lest"
   },
   "For Loop": {
     "prefix": "chant",
     "body": [
-      "chant ${1:variable} from ${2:start} to ${3:end} {",
-      "\t${4:// loop body}",
+      "chant ${1:i} from ${2:1} to ${3:10} {",
+      "    ${4:// loop body}",
       "}"
     ],
     "description": "For loop with chant"
@@ -97,63 +72,103 @@
   "For Loop with Step": {
     "prefix": "chantstep",
     "body": [
-      "chant ${1:variable} from ${2:start} to ${3:end} step ${4:step} {",
-      "\t${5:// loop body}",
+      "chant ${1:i} from ${2:1} to ${3:10} step ${4:2} {",
+      "    ${5:// loop body}",
       "}"
     ],
-    "description": "For loop with custom step"
+    "description": "For loop with step"
   },
-  "Comment Block": {
-    "prefix": "comment",
+  "Function Definition": {
+    "prefix": "enchant",
     "body": [
-      "##",
-      "# ${1:description}",
-      "# ${2:additional info}",
-      "##"
+      "enchant ${1:function_name}(${2:parameters}) {",
+      "    ${3:// function body}",
+      "}"
     ],
-    "description": "Multi-line comment block"
+    "description": "Define a function with enchant"
   },
-  "String Interpolation": {
-    "prefix": "interpolate",
+  "File Operations": {
+    "prefix": "fileops",
     "body": [
-      "\"${1:text} $${2:variable} ${3:more text}\""
+      "scry file_exists(\"${1:filename}\") {",
+      "    conjure content = read_file(\"${1:filename}\")",
+      "    incant \"File content: \\$content\"",
+      "} lest {",
+      "    incant \"File does not exist\"",
+      "}"
     ],
-    "description": "String with variable interpolation"
+    "description": "Basic file operations"
+  },
+  "Platform Detection": {
+    "prefix": "platform",
+    "body": [
+      "conjure os = platform()",
+      "scry os == \"linux\" {",
+      "    incant \"Running on Linux! 🐧\"",
+      "} morph os == \"windows\" {",
+      "    incant \"Running on Windows! 🪟\"",
+      "} morph os == \"macos\" {",
+      "    incant \"Running on macOS! 🍎\"",
+      "} lest {",
+      "    incant \"Unknown platform: \\$os\"",
+      "}"
+    ],
+    "description": "Cross-platform detection"
+  },
+  "Package Management": {
+    "prefix": "package",
+    "body": [
+      "# Initialize project",
+      "cast package_init(\"${1:project_name}\")",
+      "",
+      "# Add dependencies",
+      "cast package_add(\"${2:package_name}\", \"latest\", false)",
+      "",
+      "# Install dependencies",
+      "cast package_install()"
+    ],
+    "description": "Basic package management workflow"
+  },
+  "Environment Variables": {
+    "prefix": "env",
+    "body": [
+      "conjure ${1:var_name} = get_env(\"${2:ENV_VAR_NAME}\")",
+      "scry ${1:var_name} != \"\" {",
+      "    incant \"Environment variable found: \\$${1:var_name}\"",
+      "} lest {",
+      "    incant \"Environment variable not set\"",
+      "}"
+    ],
+    "description": "Environment variable handling"
+  },
+  "Directory Operations": {
+    "prefix": "dirops",
+    "body": [
+      "conjure dir_name = \"${1:directory_name}\"",
+      "cast ensure_directory(dir_name)",
+      "",
+      "scry directory_exists(dir_name) {",
+      "    incant \"Directory created: \\$dir_name\"",
+      "} lest {",
+      "    incant \"Failed to create directory\"",
+      "}"
+    ],
+    "description": "Directory operations"
   },
   "Script Header": {
     "prefix": "header",
     "body": [
       "#!/usr/bin/env mage",
-      "# ${1:Script description}",
       "",
-      "conjure ${2:script_name} = \"${3:My Mage Script}\"",
-      "incant \"🧙‍♂️ Starting $${2:script_name}...\"",
+      "# ${1:Script Description}",
+      "# Author: ${2:Your Name}",
+      "# Date: ${3:$(date)}",
       "",
-      "${4:// Your script content here}",
+      "incant \"🔮 ${4:Script Name}\"",
+      "incant \"${'='.repeat(${4:Script Name}.length + 4)}\"",
       "",
-      "incant \"✅ $${2:script_name} complete!\""
+      "${0:// Your code here}"
     ],
-    "description": "Standard mage script header"
-  },
-  "Dotfiles Setup Function": {
-    "prefix": "dotfiles",
-    "body": [
-      "enchant setup_${1:component}() {",
-      "\tincant \"⚙️ Setting up ${1:component}...\"",
-      "\t",
-      "\t${2:// Setup commands here}",
-      "\tevoke \"${3:shell_command}\"",
-      "\t",
-      "\tincant \"✅ ${1:component} setup complete!\"",
-      "}"
-    ],
-    "description": "Dotfiles setup function template"
-  },
-  "Cross-Platform Command": {
-    "prefix": "crossplatform",
-    "body": [
-      "evoke \"${1:unix_command} 2>/dev/null || ${2:windows_command} 2>nul\""
-    ],
-    "description": "Cross-platform shell command"
+    "description": "Mage script header template"
   }
 } 

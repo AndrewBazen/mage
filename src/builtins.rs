@@ -116,6 +116,40 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
             Ok(BuiltinValue::Boolean(package_installed(&args[0])))
         },
         
+        // Package Project Management
+        "package_init" => {
+            if args.len() != 1 {
+                return Err("package_init() requires exactly 1 argument: project_name".to_string());
+            }
+            package_init(&args[0])
+        },
+        "package_add" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Err("package_add() requires 2-3 arguments: package_name, version, [--dev]".to_string());
+            }
+            let is_dev = args.len() == 3 && args[2] == "--dev";
+            package_add(&args[0], &args[1], is_dev)
+        },
+        "package_remove" => {
+            if args.len() != 1 {
+                return Err("package_remove() requires exactly 1 argument: package_name".to_string());
+            }
+            package_remove(&args[0])
+        },
+        "package_install" => {
+            let dev = args.get(0).map(|s| s == "--dev").unwrap_or(false);
+            package_install_deps(dev)
+        },
+        "package_list" => {
+            Ok(BuiltinValue::String(package_list()))
+        },
+        "package_info" => {
+            if args.len() != 1 {
+                return Err("package_info() requires exactly 1 argument: package_name".to_string());
+            }
+            package_info(&args[0])
+        },
+        
         // Network Operations  
         "download" => {
             if args.len() != 2 {
@@ -172,6 +206,7 @@ pub fn is_builtin(name: &str) -> bool {
         "write_file" | "remove_file" | "remove_directory" |
         "detect_package_managers" | "get_primary_package_manager" | "package_manager_available" |
         "install_package" | "package_installed" | "search_package" | "list_packages" |
+        "package_init" | "package_add" | "package_remove" | "package_install" | "package_list" | "package_info" |
         "download" | "env_var"
     )
 }
@@ -852,4 +887,101 @@ fn get_env_var(name: &str, default: Option<&str>) -> String {
     std::env::var(name).unwrap_or_else(|_| {
         default.unwrap_or("").to_string()
     })
+}
+
+// Package Project Management Functions
+fn package_init(name: &str) -> Result<BuiltinValue, String> {
+    use std::env;
+    let current_dir = env::current_dir()
+        .map_err(|e| format!("Failed to get current directory: {}", e))?;
+    
+    let resolver = crate::package::PackageResolver::new(&current_dir);
+    resolver.init_project(name)?;
+    
+    println!("✅ Initialized mage project: {}", name);
+    println!("📁 Created project structure:");
+    println!("   mage.toml        - Project manifest");
+    println!("   scripts/         - Project scripts");
+    println!("   .mage/           - Package cache");
+    
+    Ok(BuiltinValue::Boolean(true))
+}
+
+fn package_add(package: &str, version: &str, is_dev: bool) -> Result<BuiltinValue, String> {
+    use std::env;
+    let current_dir = env::current_dir()
+        .map_err(|e| format!("Failed to get current directory: {}", e))?;
+    
+    let resolver = crate::package::PackageResolver::new(&current_dir);
+    resolver.add_dependency(package, version, is_dev)?;
+    
+    let dep_type = if is_dev { "dev dependency" } else { "dependency" };
+    println!("✅ Added {} {} @ {}", dep_type, package, version);
+    
+    Ok(BuiltinValue::Boolean(true))
+}
+
+fn package_remove(package: &str) -> Result<BuiltinValue, String> {
+    use std::env;
+    let current_dir = env::current_dir()
+        .map_err(|e| format!("Failed to get current directory: {}", e))?;
+    
+    let resolver = crate::package::PackageResolver::new(&current_dir);
+    resolver.remove_dependency(package)?;
+    
+    println!("✅ Removed dependency: {}", package);
+    
+    Ok(BuiltinValue::Boolean(true))
+}
+
+fn package_install_deps(dev: bool) -> Result<BuiltinValue, String> {
+    use std::env;
+    let current_dir = env::current_dir()
+        .map_err(|e| format!("Failed to get current directory: {}", e))?;
+    
+    let resolver = crate::package::PackageResolver::new(&current_dir);
+    resolver.install_dependencies(dev)?;
+    
+    println!("✅ Dependencies installed successfully");
+    
+    Ok(BuiltinValue::Boolean(true))
+}
+
+fn package_list() -> String {
+    use std::env;
+    let current_dir = match env::current_dir() {
+        Ok(dir) => dir,
+        Err(_) => return "❌ Failed to get current directory".to_string(),
+    };
+    
+    let resolver = crate::package::PackageResolver::new(&current_dir);
+    match resolver.read_manifest() {
+        Ok(manifest) => {
+            let mut result = format!("📦 {} v{}\n", manifest.name, manifest.version);
+            
+            if !manifest.dependencies.is_empty() {
+                result.push_str("\n🔗 Dependencies:\n");
+                for (name, dep) in &manifest.dependencies {
+                    result.push_str(&format!("  {} @ {}\n", name, dep.version));
+                }
+            }
+            
+            if !manifest.dev_dependencies.is_empty() {
+                result.push_str("\n🛠️  Dev Dependencies:\n");
+                for (name, dep) in &manifest.dev_dependencies {
+                    result.push_str(&format!("  {} @ {}\n", name, dep.version));
+                }
+            }
+            
+            result
+        }
+        Err(e) => format!("❌ Failed to read project manifest: {}", e),
+    }
+}
+
+fn package_info(package: &str) -> Result<BuiltinValue, String> {
+    // This would typically query a package registry
+    // For now, provide basic package information
+    let info = format!("📦 Package: {}\n🔍 Status: Checking...\n💡 Use search_package() for repository search", package);
+    Ok(BuiltinValue::String(info))
 } 

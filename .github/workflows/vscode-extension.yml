@@ -1,0 +1,129 @@
+name: VSCode Extension
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'editor-support/vscode/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'editor-support/vscode/**'
+  release:
+    types: [published]
+
+jobs:
+  build-extension:
+    name: Build VSCode Extension
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'editor-support/vscode/package-lock.json'
+    
+    - name: Copy icon to extension directory
+      run: |
+        # Copy the mage icon to the VSCode extension directory
+        cp assets/icons/mage64.png editor-support/vscode/icons/mage64.png
+    
+    - name: Install dependencies
+      working-directory: editor-support/vscode
+      run: npm install
+    
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+    
+    - name: Build extension
+      working-directory: editor-support/vscode
+      run: vsce package
+    
+    - name: Upload extension artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vscode-extension
+        path: editor-support/vscode/*.vsix
+
+  publish-extension:
+    name: Publish VSCode Extension
+    if: github.event_name == 'release'
+    needs: build-extension
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Copy icon to extension directory
+      run: |
+        cp assets/icons/mage64.png editor-support/vscode/icons/mage64.png
+    
+    - name: Install dependencies
+      working-directory: editor-support/vscode
+      run: npm install
+    
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+    
+    - name: Publish to VS Code Marketplace
+      working-directory: editor-support/vscode
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: vsce publish
+    
+    - name: Publish to Open VSX Registry
+      working-directory: editor-support/vscode
+      env:
+        OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      run: |
+        npm install -g ovsx
+        ovsx publish || echo "Open VSX publish failed (optional)"
+
+  test-extension:
+    name: Test VSCode Extension
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Copy icon to extension directory
+      run: |
+        cp assets/icons/mage64.png editor-support/vscode/icons/mage64.png
+    
+    - name: Install dependencies
+      working-directory: editor-support/vscode
+      run: npm install
+    
+    - name: Validate extension
+      working-directory: editor-support/vscode
+      run: |
+        # Check if package.json is valid
+        node -e "require('./package.json')"
+        
+        # Check if icon exists
+        [ -f "icons/mage64.png" ] && echo "✅ Icon file exists" || (echo "❌ Icon file missing" && exit 1)
+        
+        # Check if language configuration exists
+        [ -f "language-configuration.json" ] && echo "✅ Language config exists" || (echo "❌ Language config missing" && exit 1)
+        
+        # Validate JSON files
+        if [ -f "syntaxes/mage.tmLanguage.json" ]; then
+            node -e "require('./syntaxes/mage.tmLanguage.json')" && echo "✅ Syntax file valid"
+        fi
+        
+        if [ -f "snippets/mage.json" ]; then
+            node -e "require('./snippets/mage.json')" && echo "✅ Snippets file valid"
+        fi
+        
+        echo "✅ Extension validation complete!" 

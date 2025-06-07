@@ -1,0 +1,52 @@
+version = "1"
+
+[packages.curl]
+version = "latest"
+checksum = "sha256:0e0e1a19f8cd04a27df1a00a352207a4"
+dependencies = []
+resolved_at = "2025-06-07T00:39:21.434138300+00:00"
+
+[packages.curl.source]
+Registry = "auto"
+
+[packages.git]
+version = "latest"
+checksum = "sha256:5d491262f35049e56df8be2c5485810b"
+dependencies = []
+resolved_at = "2025-06-07T00:39:21.434141100+00:00"
+
+[packages.git.source]
+Registry = "auto"
+
+[packages.nodejs]
+version = ">=18.0.0"
+checksum = "sha256:e34d89711ca01bda0fe8dcf53b9a9ad2"
+dependencies = []
+resolved_at = "2025-06-07T00:39:21.434144600+00:00"
+
+[packages.nodejs.source]
+Registry = "auto"
+
+[packages.jq]
+version = "latest"
+checksum = "sha256:02ff66cfcd0a28b985c61e8cd6811071"
+dependencies = []
+resolved_at = "2025-06-07T00:39:21.434130700+00:00"
+
+[packages.jq.source]
+Registry = "auto"
+
+[packages.python3]
+version = "^3.9.0"
+checksum = "sha256:9eed69402a3da83bbf9f3544787db555"
+dependencies = []
+resolved_at = "2025-06-07T00:39:21.434148+00:00"
+
+[packages.python3.source]
+Registry = "auto"
+
+[metadata]
+generated_at = "2025-06-07T00:39:21.434150600+00:00"
+generator = "mage"
+platform = "windows"
+mage_version = "0.1.0"

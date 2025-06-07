@@ -1,0 +1,17 @@
+{
+  "iconDefinitions": {
+    "mage-file": {
+      "iconPath": "./mage64.png"
+    }
+  },
+  "fileExtensions": {
+    "mage": "mage-file"
+  },
+  "fileNames": {
+    "mage.toml": "mage-file",
+    "mage.lock": "mage-file"
+  },
+  "languageIds": {
+    "mage": "mage-file"
+  }
+} 

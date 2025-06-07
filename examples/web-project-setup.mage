@@ -1,0 +1,237 @@
+#!/usr/bin/env mage
+
+# 🌐 Web Project Setup with Package Workflows
+# Demonstrates setting up a complete web development environment
+
+incant "🌐 Web Development Project Setup"
+incant "================================="
+
+incant ""
+incant "🚀 Step 1: Initialize Project"
+incant "------------------------------"
+
+# Initialize the project
+cast package_init("my-web-app")
+
+incant ""
+incant "📦 Step 2: Add Core Dependencies"
+incant "---------------------------------"
+
+# Core system dependencies
+incant "Adding core system dependencies..."
+cast package_add("git", "latest", false)
+cast package_add("nodejs", ">=18.0.0", false)
+cast package_add("python3", "^3.9.0", false)
+
+# Web development tools
+incant "Adding web development tools..."
+cast package_add("nginx", "latest", false)
+cast package_add("redis", "latest", false)
+
+incant ""
+incant "🛠️  Step 3: Add Development Dependencies"
+incant "----------------------------------------"
+
+# Development and testing tools
+cast package_add("curl", "latest", true)
+cast package_add("jq", "latest", true)
+cast package_add("docker", "latest", true)
+
+incant ""
+incant "📋 Step 4: View Project Dependencies"
+incant "------------------------------------"
+cast package_list()
+
+incant ""
+incant "⚙️  Step 5: Install Dependencies"
+incant "--------------------------------"
+
+# Install all dependencies
+incant "Installing production dependencies..."
+cast package_install()
+
+incant "Installing development dependencies..."
+cast package_install("--dev")
+
+incant ""
+incant "🔧 Step 6: Project Structure Setup"
+incant "-----------------------------------"
+
+# Create additional project directories
+cast ensure_directory("src")
+cast ensure_directory("public")
+cast ensure_directory("config")
+cast ensure_directory("docs")
+
+incant "✅ Created project directories:"
+incant "  src/     - Source code"
+incant "  public/  - Static assets"
+incant "  config/  - Configuration files"
+incant "  docs/    - Documentation"
+
+incant ""
+incant "📝 Step 7: Create Configuration Files"
+incant "-------------------------------------"
+
+# Create package.json for Node.js dependencies
+conjure package_json = {
+  "name": "my-web-app",
+  "version": "1.0.0",
+  "description": "A web application built with mage",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "helmet": "^6.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20",
+    "jest": "^29.0.0",
+    "webpack": "^5.74.0"
+  }
+}
+
+cast write_file("package.json", "$package_json")
+
+# Create requirements.txt for Python dependencies
+conjure requirements_txt = "flask>=2.2.0
+gunicorn>=20.1.0
+redis>=4.3.0
+requests>=2.28.0
+pytest>=7.1.0"
+
+cast write_file("requirements.txt", "$requirements_txt")
+
+incant "✅ Created configuration files:"
+incant "  package.json      - Node.js dependencies"
+incant "  requirements.txt  - Python dependencies"
+
+incant ""
+incant "🐳 Step 8: Docker Configuration"
+incant "-------------------------------"
+
+# Create Dockerfile
+conjure dockerfile = "FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY requirements.txt ./
+
+# Install dependencies
+RUN npm install
+RUN pip install -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Start application
+CMD [\"npm\", \"start\"]"
+
+cast write_file("Dockerfile", "$dockerfile")
+
+# Create docker-compose.yml
+conjure docker_compose = "version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - \"3000:3000\"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - \"6379:6379\"
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: mywebapp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - \"5432:5432\"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:"
+
+cast write_file("docker-compose.yml", "$docker_compose")
+
+incant "✅ Created Docker configuration:"
+incant "  Dockerfile         - Container definition"
+incant "  docker-compose.yml - Multi-service setup"
+
+incant ""
+incant "🚀 Step 9: Development Scripts"
+incant "------------------------------"
+
+# The scripts are already created by package_init, but let's show them
+incant "Available development scripts:"
+incant "  mage run setup  - Install all dependencies"
+incant "  mage run build  - Build the application"
+incant "  mage run test   - Run tests"
+
+incant ""
+incant "Custom scripts you can add:"
+incant "  mage scripts/dev-server.mage   - Start development server"
+incant "  mage scripts/deploy.mage       - Deploy to production"
+incant "  mage scripts/backup.mage       - Backup database"
+
+incant ""
+incant "🎯 Step 10: Next Steps"
+incant "----------------------"
+
+incant "Your web development environment is ready! 🎉"
+incant ""
+incant "To get started:"
+incant "1. cd my-web-app"
+incant "2. npm install              # Install Node.js packages"
+incant "3. pip install -r requirements.txt  # Install Python packages"
+incant "4. docker-compose up        # Start all services"
+incant "5. Open http://localhost:3000"
+incant ""
+incant "Project structure:"
+incant "my-web-app/"
+incant "├── mage.toml           # Mage project manifest"
+incant "├── package.json        # Node.js dependencies"
+incant "├── requirements.txt    # Python dependencies"
+incant "├── Dockerfile          # Container definition"
+incant "├── docker-compose.yml  # Multi-service setup"
+incant "├── src/                # Source code"
+incant "├── public/             # Static assets"
+incant "├── config/             # Configuration"
+incant "├── scripts/            # Mage scripts"
+incant "└── .mage/              # Package cache"
+
+incant ""
+incant "🌟 Features enabled:"
+incant "• 📦 Declarative dependency management"
+incant "• 🔄 Reproducible development environment"
+incant "• 🐳 Containerized deployment"
+incant "• 🧪 Testing framework setup"
+incant "• ⚡ Hot reload development"
+incant "• 🔒 Security best practices"
+
+incant ""
+incant "✨ Happy coding! 🚀" 

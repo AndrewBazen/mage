@@ -1,0 +1,67 @@
+#!/usr/bin/env mage
+# Project Test Script
+# This script runs when you execute: mage run test
+
+incant "🧪 Running tests..."
+
+# Run different types of tests based on what's available
+conjure test_files = []
+conjure passed = 0
+conjure failed = 0
+
+# Look for test files
+scry directory_exists("tests") {
+    incant "📁 Found tests directory"
+    # Add logic to discover test files
+}
+
+# Run platform-specific tests
+scry file_exists("tests/unit.mage") {
+    incant "🔬 Running unit tests..."
+    evoke "mage tests/unit.mage"
+}
+
+scry file_exists("tests/integration.mage") {
+    incant "🔗 Running integration tests..."
+    evoke "mage tests/integration.mage"
+}
+
+# Example: Run tests based on project type
+scry file_exists("Cargo.toml") {
+    incant "🦀 Running Rust tests..."
+    evoke "cargo test"
+} morph file_exists("package.json") {
+    incant "📦 Running Node.js tests..."
+    evoke "npm test"
+} morph file_exists("pytest.ini") {
+    incant "🐍 Running Python tests..."
+    evoke "pytest"
+}
+
+# Simple validation tests
+incant "✅ Running validation tests..."
+
+# Check that important files exist
+conjure required_files = ["README.md", "mage.toml"]
+chant file in required_files {
+    scry file_exists(file) {
+        incant "✅ $file exists"
+        conjure passed = passed + 1
+    } lest {
+        incant "❌ $file missing"
+        conjure failed = failed + 1
+    }
+}
+
+# Summary
+incant ""
+incant "📊 Test Summary:"
+incant "  ✅ Passed: $passed"
+incant "  ❌ Failed: $failed"
+
+scry failed == 0 {
+    incant "🎉 All tests passed!"
+} lest {
+    incant "💥 Some tests failed!"
+    curse "Tests failed"
+} 

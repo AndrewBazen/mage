@@ -1,0 +1,119 @@
+#!/usr/bin/env mage
+
+# 📦 Package Workflow Demo
+# Demonstrates the comprehensive package management system
+
+incant "📦 Mage Package Workflow Demo"
+incant "================================"
+
+incant ""
+incant "🚀 1. Project Initialization"
+incant "-----------------------------"
+
+# Initialize a new mage project
+incant "Creating new project 'my-awesome-project'..."
+cast package_init("my-awesome-project")
+
+incant ""
+incant "📋 2. Dependency Management"
+incant "----------------------------"
+
+# Add various types of dependencies
+incant "Adding system dependencies..."
+cast package_add("git", "latest", false)
+cast package_add("nodejs", ">=18.0.0", false)
+cast package_add("python3", "^3.9.0", false)
+
+incant ""
+incant "Adding development dependencies..."
+cast package_add("curl", "latest", true)
+cast package_add("jq", "latest", true)
+
+incant ""
+incant "📊 3. Viewing Dependencies"
+incant "---------------------------"
+cast package_list()
+
+incant ""
+incant "🔧 4. Installing Dependencies"
+incant "------------------------------"
+
+# Install production dependencies
+incant "Installing production dependencies..."
+cast package_install()
+
+incant ""
+incant "Installing development dependencies..."
+cast package_install("--dev")
+
+incant ""
+incant "🔍 5. Package Information"
+incant "--------------------------"
+cast package_info("git")
+
+incant ""
+incant "📝 6. Advanced Package Sources"
+incant "-------------------------------"
+
+incant "Example manifest with various package sources:"
+incant ""
+incant "[dependencies]"
+incant "git = { version = \"latest\", source = \"auto\" }"
+incant "nodejs = { version = \">=18.0.0\", source = \"auto\" }"
+incant "my-tool = { version = \"1.0.0\", source = { git = { url = \"https://github.com/user/my-tool.git\", rev = \"v1.0.0\" } } }"
+incant "local-lib = { version = \"dev\", source = { path = \"../local-lib\" } }"
+incant "binary-tool = { version = \"latest\", source = { url = \"https://releases.example.com/tool.tar.gz\" } }"
+
+incant ""
+incant "🎯 7. Platform-Specific Dependencies"
+incant "------------------------------------"
+
+incant "Example platform-specific dependencies:"
+incant ""
+incant "[dependencies]"
+incant "windows-tool = { version = \"1.0.0\", platform = \"windows\" }"
+incant "macos-tool = { version = \"1.0.0\", platform = \"macos\" }"
+incant "linux-tool = { version = \"1.0.0\", platform = \"linux\" }"
+
+incant ""
+incant "⚙️  8. Project Scripts"
+incant "----------------------"
+
+incant "Available project scripts:"
+incant "• mage run setup    - Install system dependencies"
+incant "• mage run build    - Build the project"
+incant "• mage run test     - Run tests"
+
+incant ""
+incant "📁 9. Project Structure"
+incant "------------------------"
+
+incant "Generated project structure:"
+incant "my-awesome-project/"
+incant "├── mage.toml           # Project manifest"
+incant "├── mage.lock           # Dependency lock file"
+incant "├── scripts/"
+incant "│   ├── setup.mage      # Setup script"
+incant "│   ├── build.mage      # Build script"
+incant "│   └── test.mage       # Test script"
+incant "├── lib/                # Library code"
+incant "├── tests/              # Test files"
+incant "└── .mage/"
+incant "    └── packages/       # Package cache"
+
+incant ""
+incant "🔄 10. Dependency Resolution"
+incant "-----------------------------"
+
+incant "The package system provides:"
+incant "• 📋 Declarative dependency management"
+incant "• 🔒 Lock files for reproducible builds"
+incant "• 🌍 Cross-platform package mapping"
+incant "• 📦 Multiple package sources (registry, git, path, url)"
+incant "• 🎯 Platform-specific dependencies"
+incant "• ⚡ Parallel dependency installation"
+incant "• 🔍 Intelligent package search and selection"
+
+incant ""
+incant "✨ Package workflow demo complete!"
+incant "🚀 Ready to build amazing projects with mage!" 

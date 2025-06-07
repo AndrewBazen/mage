@@ -1,0 +1,32 @@
+#!/usr/bin/env mage
+# Project Setup Script
+# This script runs when you execute: mage run setup
+
+incant "🚀 Setting up project..."
+
+# Install system dependencies
+incant "📦 Installing system dependencies..."
+conjure dependencies = ["git", "curl"]
+chant dep in dependencies {
+    scry not package_installed(dep) {
+        cast install_package(dep)
+    } lest {
+        incant "✅ $dep already installed"
+    }
+}
+
+# Run any additional setup commands
+incant "⚙️  Running additional setup..."
+
+# Create necessary directories
+cast ensure_directory("tmp")
+cast ensure_directory("logs")
+cast ensure_directory("data")
+
+# Set up git hooks (if this is a git repo)
+scry file_exists(".git") {
+    incant "🔧 Setting up git hooks..."
+    # Add git hook setup here
+}
+
+incant "✅ Project setup complete!" 

@@ -1,0 +1,36 @@
+#!/usr/bin/env mage
+# Project Build Script
+# This script runs when you execute: mage run build
+
+incant "🔨 Building project..."
+
+# Compile/build steps
+incant "⚙️  Compiling sources..."
+
+# Example build commands - customize for your project
+scry file_exists("Cargo.toml") {
+    incant "📦 Building Rust project..."
+    evoke "cargo build --release"
+} morph file_exists("package.json") {
+    incant "📦 Building Node.js project..."
+    evoke "npm run build"
+} morph file_exists("Makefile") {
+    incant "📦 Building with Make..."
+    evoke "make"
+} lest {
+    incant "⚠️  No build system detected"
+    incant "💡 Add your build commands to scripts/build.mage"
+}
+
+# Copy assets
+scry directory_exists("assets") {
+    incant "📁 Copying assets..."
+    cast ensure_directory("dist")
+    evoke "cp -r assets/* dist/"
+}
+
+# Run tests as part of build
+incant "🧪 Running tests..."
+evoke "mage scripts/test.mage"
+
+incant "✅ Build complete!" 

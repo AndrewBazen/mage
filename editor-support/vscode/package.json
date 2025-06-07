@@ -1,0 +1,69 @@
+{
+  "name": "mage-language",
+  "displayName": "Mage Language",
+  "description": "Language support for Mage scripting language",
+  "version": "1.0.0",
+  "publisher": "AndrewBazen",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewBazen/mage.git"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "mage",
+    "scripting",
+    "automation",
+    "cross-platform"
+  ],
+  "icon": "icons/mage64.png",
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "mage",
+        "aliases": ["Mage", "mage"],
+        "extensions": [".mage"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/mage64.png",
+          "dark": "./icons/mage64.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mage",
+        "scopeName": "source.mage",
+        "path": "./syntaxes/mage.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "mage",
+        "path": "./snippets/mage.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "mage-icons",
+        "label": "Mage File Icons",
+        "path": "./icons/mage-icon-theme.json"
+      }
+    ]
+  },
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.19.0"
+  }
+} 

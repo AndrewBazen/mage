@@ -1,0 +1,344 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+    - name: Get version from tag
+      id: get_version
+      run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: Mage ${{ steps.get_version.outputs.version }}
+        body: |
+          # Mage ${{ steps.get_version.outputs.version }}
+          
+          🎉 **New Release of Mage Language**
+          
+          ## 🚀 Features
+          - Cross-platform scripting and automation
+          - Package workflow management
+          - Interactive REPL
+          - Comprehensive built-in functions
+          
+          ## 📦 Installation
+          
+          ### Download Binary
+          Download the appropriate binary for your platform below.
+          
+          ### Build from Source
+          ```bash
+          git clone https://github.com/AndrewBazen/mage.git
+          cd mage
+          cargo build --release
+          ```
+          
+          ### Package Managers
+          
+          #### Windows (Scoop)
+          ```powershell
+          # Coming soon
+          ```
+          
+          #### macOS (Homebrew)
+          ```bash
+          # Coming soon
+          ```
+          
+          #### Linux
+          ```bash
+          # Download and install the binary
+          curl -L https://github.com/AndrewBazen/mage/releases/download/${{ steps.get_version.outputs.version }}/mage-linux-x86_64.tar.gz | tar xz
+          sudo mv mage /usr/local/bin/
+          ```
+          
+          ## 🎯 Quick Start
+          
+          ```bash
+          # Initialize a new project
+          mage -c 'cast package_init("my-project")'
+          
+          # Add dependencies
+          mage -c 'cast package_add("git", "latest", false)'
+          
+          # Run a script
+          mage examples/system-info.mage
+          ```
+          
+          ## 📚 Documentation
+          
+          - [Package Workflows](examples/PACKAGE-WORKFLOWS.md)
+          - [Language Examples](examples/)
+          - [README](README.md)
+          
+          ---
+          
+          **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${{ steps.get_version.outputs.version }}
+        draft: false
+        prerelease: false
+
+  build-release:
+    name: Build Release
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: mage
+            asset_name: mage-linux-x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary_name: mage
+            asset_name: mage-linux-x86_64-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: mage.exe
+            asset_name: mage-windows-x86_64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: mage
+            asset_name: mage-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: mage
+            asset_name: mage-macos-aarch64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: Install musl tools (Linux musl only)
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y musl-tools
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ matrix.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build release binary
+      run: cargo build --release --target ${{ matrix.target }} --verbose
+
+    - name: Strip binary (Unix only)
+      if: runner.os != 'Windows'
+      run: strip target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+
+    - name: Create archive (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        mkdir -p release-assets
+        cd target/${{ matrix.target }}/release/
+        tar czf ../../../release-assets/${{ matrix.asset_name }}.tar.gz ${{ matrix.binary_name }}
+        cd ../../../release-assets/
+        sha256sum ${{ matrix.asset_name }}.tar.gz > ${{ matrix.asset_name }}.tar.gz.sha256
+
+    - name: Create archive (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        mkdir release-assets
+        cd target/${{ matrix.target }}/release/
+        7z a ../../../release-assets/${{ matrix.asset_name }}.zip ${{ matrix.binary_name }}
+        cd ../../../release-assets/
+        Get-FileHash ${{ matrix.asset_name }}.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -FilePath ${{ matrix.asset_name }}.zip.sha256 -Encoding ascii
+
+    - name: Upload archive
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip' || '.tar.gz' }}
+        asset_name: ${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip' || '.tar.gz' }}
+        asset_content_type: ${{ runner.os == 'Windows' && 'application/zip' || 'application/gzip' }}
+
+    - name: Upload checksum
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip.sha256' || '.tar.gz.sha256' }}
+        asset_name: ${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip.sha256' || '.tar.gz.sha256' }}
+        asset_content_type: text/plain
+
+  test-release-binaries:
+    name: Test Release Binaries
+    needs: [create-release, build-release]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download release artifact (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        curl -L -o mage-linux-x86_64.tar.gz \
+          "https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/mage-linux-x86_64.tar.gz"
+        tar xzf mage-linux-x86_64.tar.gz
+        chmod +x mage
+    
+    - name: Download release artifact (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        curl -L -o mage-windows-x86_64.zip `
+          "https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/mage-windows-x86_64.zip"
+        7z x mage-windows-x86_64.zip
+    
+    - name: Download release artifact (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        curl -L -o mage-macos-x86_64.tar.gz \
+          "https://github.com/${{ github.repository }}/releases/download/${{ needs.create-release.outputs.version }}/mage-macos-x86_64.tar.gz"
+        tar xzf mage-macos-x86_64.tar.gz
+        chmod +x mage
+    
+    - name: Test binary functionality (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        # Test basic functionality
+        echo 'incant "Release test successful!"' | ./mage -
+        
+        # Test version
+        ./mage --version
+        
+        # Test system detection
+        ./mage -c 'incant "Platform: " platform()'
+        ./mage -c 'incant "Architecture: " architecture()'
+        
+        # Test package workflow
+        mkdir test-release
+        cd test-release
+        ../mage -c 'cast package_init("release-test")'
+        [ -f mage.toml ] && echo "✅ Package workflow working"
+    
+    - name: Test binary functionality (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        # Test basic functionality
+        echo 'incant "Release test successful!"' | .\mage.exe -
+        
+        # Test version
+        .\mage.exe --version
+        
+        # Test system detection
+        .\mage.exe -c 'incant "Platform: " platform()'
+        .\mage.exe -c 'incant "Architecture: " architecture()'
+        
+        # Test package workflow
+        mkdir test-release
+        cd test-release
+        ..\mage.exe -c 'cast package_init("release-test")'
+        if (Test-Path "mage.toml") { echo "✅ Package workflow working" }
+
+  publish-artifacts:
+    name: Publish Artifacts
+    needs: [create-release, build-release, test-release-binaries]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create installation script
+      run: |
+        cat > install.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        # Mage Language Installer
+        # Usage: curl -sSL https://github.com/AndrewBazen/mage/raw/main/install.sh | bash
+        
+        REPO="AndrewBazen/mage"
+        BINARY_NAME="mage"
+        INSTALL_DIR="/usr/local/bin"
+        
+        # Detect platform
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        
+        case "$ARCH" in
+            x86_64) ARCH="x86_64" ;;
+            aarch64|arm64) ARCH="aarch64" ;;
+            *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+        esac
+        
+        case "$OS" in
+            linux) PLATFORM="linux" ;;
+            darwin) PLATFORM="macos" ;;
+            *) echo "Unsupported OS: $OS" && exit 1 ;;
+        esac
+        
+        # Get latest release
+        VERSION=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
+        
+        if [ -z "$VERSION" ]; then
+            echo "Failed to get latest version"
+            exit 1
+        fi
+        
+        echo "Installing Mage $VERSION for $PLATFORM-$ARCH..."
+        
+        # Download and install
+        ASSET_NAME="mage-$PLATFORM-$ARCH"
+        DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$ASSET_NAME.tar.gz"
+        
+        echo "Downloading from: $DOWNLOAD_URL"
+        
+        curl -L "$DOWNLOAD_URL" | tar xz
+        
+        # Install binary
+        if [ -w "$INSTALL_DIR" ]; then
+            mv "$BINARY_NAME" "$INSTALL_DIR/"
+        else
+            echo "Installing to $INSTALL_DIR requires sudo..."
+            sudo mv "$BINARY_NAME" "$INSTALL_DIR/"
+        fi
+        
+        echo "✅ Mage installed successfully!"
+        echo "🚀 Try: mage --version"
+        echo "📚 Documentation: https://github.com/$REPO"
+        EOF
+        
+        chmod +x install.sh
+    
+    - name: Upload installation script
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./install.sh
+        asset_name: install.sh
+        asset_content_type: text/plain 

@@ -2,16 +2,55 @@
 # 🧙‍♂️ Mage Built-in Functions Demo
 # This demonstrates the powerful cross-platform built-in functions
 
-incant "🔮 Mage Built-in Functions Demo"
-incant "=================================="
+# System Information Script
+# This script demonstrates basic mage functionality and is used for testing
 
-# System Information
+incant "🔮 Mage System Information"
+incant "========================="
 incant ""
-incant "📊 System Information:"
-cast platform()
-cast architecture()
-cast home_directory()
-cast current_directory()
+
+# Platform information
+conjure os = platform()
+conjure arch = architecture()
+
+incant "🖥️  Platform: $os"
+incant "🏗️  Architecture: $arch"
+incant ""
+
+# Current directory and environment
+conjure current_dir = get_current_directory()
+incant "📁 Current Directory: $current_dir"
+incant ""
+
+# Check available package managers
+incant "📦 Available Package Managers:"
+conjure pm_list = detect_package_managers()
+incant "   $pm_list"
+incant ""
+
+# Primary package manager
+conjure primary_pm = get_primary_package_manager()
+incant "🎯 Primary Package Manager: $primary_pm"
+incant ""
+
+# Test conditional logic based on platform
+scry os == "linux" {
+    incant "🐧 Running on Linux!"
+    incant "   Great choice for development and servers."
+} morph os == "windows" {
+    incant "🪟 Running on Windows!"
+    incant "   Perfect for desktop applications and gaming."
+} morph os == "macos" {
+    incant "🍎 Running on macOS!"
+    incant "   Excellent for creative work and development."
+} lest {
+    incant "🤔 Unknown platform: $os"
+    incant "   Mage is expanding to new frontiers!"
+}
+
+incant ""
+incant "✨ System information gathering complete!"
+incant "   Mage is working correctly on your system."
 
 # Environment Variables
 incant ""

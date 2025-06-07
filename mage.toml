@@ -1,0 +1,47 @@
+name = "my-awesome-project"
+version = "0.1.0"
+description = "A mage project: my-awesome-project"
+license = "MIT"
+keywords = ["mage"]
+
+[dependencies.python3]
+version = "^3.9.0"
+optional = false
+
+[dependencies.python3.source]
+Registry = "auto"
+
+[dependencies.git]
+version = "latest"
+optional = false
+
+[dependencies.git.source]
+Registry = "auto"
+
+[dependencies.nodejs]
+version = ">=18.0.0"
+optional = false
+
+[dependencies.nodejs.source]
+Registry = "auto"
+
+[dependencies.curl]
+version = "latest"
+optional = false
+
+[dependencies.curl.source]
+Registry = "auto"
+
+[dependencies.jq]
+version = "latest"
+optional = false
+
+[dependencies.jq.source]
+Registry = "auto"
+
+[dev_dependencies]
+
+[scripts]
+build = "mage scripts/build.mage"
+setup = "mage scripts/setup.mage"
+test = "mage scripts/test.mage"

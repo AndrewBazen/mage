@@ -7,6 +7,7 @@ pub mod bin;
 pub mod builtins;
 pub mod config;
 pub mod interpreter;
+pub mod package;
 pub mod parser;
 pub mod setup;
 pub mod syntax;

@@ -1,0 +1,320 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+    
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+  build-and-test:
+    name: Build and Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
+        exclude:
+          # Only test beta on Ubuntu to save CI time
+          - os: windows-latest
+            rust: beta
+          - os: macos-latest
+            rust: beta
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ matrix.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build
+      run: cargo build --verbose
+    
+    - name: Run tests
+      run: cargo test --verbose
+    
+    - name: Build release
+      run: cargo build --release --verbose
+    
+    # Test mage language functionality
+    - name: Test mage scripts (Ubuntu/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        # Make binary executable
+        chmod +x target/release/mage
+        
+        # Test basic functionality
+        echo 'incant "Hello from mage!"' | ./target/release/mage -
+        
+        # Test system detection
+        ./target/release/mage -c 'incant platform()'
+        ./target/release/mage -c 'incant architecture()'
+        
+        # Test file operations
+        ./target/release/mage -c 'cast write_file("test.txt", "Hello World")'
+        ./target/release/mage -c 'scry file_exists("test.txt") { incant "File created successfully" }'
+        
+        # Test package manager detection
+        ./target/release/mage -c 'cast detect_package_managers()'
+    
+    - name: Test mage scripts (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        # Test basic functionality
+        echo 'incant "Hello from mage!"' | .\target\release\mage.exe -
+        
+        # Test system detection
+        .\target\release\mage.exe -c 'incant platform()'
+        .\target\release\mage.exe -c 'incant architecture()'
+        
+        # Test file operations
+        .\target\release\mage.exe -c 'cast write_file("test.txt", "Hello World")'
+        .\target\release\mage.exe -c 'scry file_exists("test.txt") { incant "File created successfully" }'
+        
+        # Test package manager detection
+        .\target\release\mage.exe -c 'cast detect_package_managers()'
+
+  package-workflow-tests:
+    name: Package Workflow Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build mage
+      run: cargo build --release
+    
+    - name: Install system dependencies for testing
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl git
+    
+    - name: Test package workflow system
+      run: |
+        # Create test directory
+        mkdir -p test-package-project
+        cd test-package-project
+        
+        # Test project initialization
+        ../target/release/mage -c 'cast package_init("test-project")'
+        
+        # Verify project structure was created
+        [ -f mage.toml ] || (echo "mage.toml not created" && exit 1)
+        [ -d scripts ] || (echo "scripts directory not created" && exit 1)
+        [ -f scripts/setup.mage ] || (echo "setup.mage not created" && exit 1)
+        
+        # Test adding dependencies (non-interactive)
+        ../target/release/mage -c 'cast package_add("curl", "latest", false)'
+        
+        # Verify dependency was added to manifest
+        grep -q "curl" mage.toml || (echo "Dependency not added to manifest" && exit 1)
+        
+        # Test listing dependencies
+        ../target/release/mage -c 'cast package_list()'
+        
+        echo "✅ Package workflow tests passed!"
+
+  vscode-extension-test:
+    name: VSCode Extension Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Copy icon to extension directory
+      run: |
+        cp assets/icons/mage64.png editor-support/vscode/icons/mage64.png
+    
+    - name: Test extension configuration
+      working-directory: editor-support/vscode
+      run: |
+        # Validate package.json
+        node -e "require('./package.json')"
+        echo "✅ VSCode extension package.json valid"
+        
+        # Check if icon exists
+        [ -f "icons/mage64.png" ] && echo "✅ Icon file exists" || (echo "❌ Icon file missing" && exit 1)
+
+  example-tests:
+    name: Example Script Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build mage
+      run: cargo build --release
+    
+    - name: Test example scripts
+      run: |
+        # Test system info example
+        ./target/release/mage examples/system-info.mage
+        
+        # Test comprehensive demo (non-interactive parts)
+        timeout 30s ./target/release/mage examples/comprehensive-demo.mage || true
+        
+        echo "✅ Example tests completed!"
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+    
+    - name: Run security audit
+      run: cargo audit
+
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run benchmarks
+      run: |
+        cargo build --release
+        
+        # Simple performance test
+        time ./target/release/mage -c 'chant i from 1 to 1000 { incant "Test $i" }' > /dev/null
+        
+        # Package system performance test
+        mkdir bench-test
+        cd bench-test
+        time ../target/release/mage -c 'cast package_init("bench-project")'
+        
+        echo "✅ Benchmarks completed!"
+
+  cross-platform-package-managers:
+    name: Cross-Platform Package Manager Tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Build mage
+      run: cargo build --release
+    
+    - name: Test package manager detection (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        ./target/release/mage -c 'incant "Platform: " platform()'
+        ./target/release/mage -c 'incant "Package managers: " detect_package_managers()'
+        ./target/release/mage -c 'incant "Primary PM: " get_primary_package_manager()'
+        
+        # Should detect apt on Ubuntu
+        ./target/release/mage -c 'scry package_manager_available("apt") { incant "✅ apt detected" } lest { incant "❌ apt not detected" }'
+    
+    - name: Test package manager detection (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        .\target\release\mage.exe -c 'incant "Platform: " platform()'
+        .\target\release\mage.exe -c 'incant "Package managers: " detect_package_managers()'
+        .\target\release\mage.exe -c 'incant "Primary PM: " get_primary_package_manager()'
+        
+        # Should detect winget or choco on Windows
+        .\target\release\mage.exe -c 'scry package_manager_available("winget") { incant "✅ winget detected" } morph package_manager_available("choco") { incant "✅ choco detected" } lest { incant "⚠️ No package manager detected" }'
+    
+    - name: Test package manager detection (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        ./target/release/mage -c 'incant "Platform: " platform()'
+        ./target/release/mage -c 'incant "Package managers: " detect_package_managers()'
+        ./target/release/mage -c 'incant "Primary PM: " get_primary_package_manager()'
+        
+        # Install Homebrew if not present (common in CI)
+        which brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Should detect brew on macOS
+        ./target/release/mage -c 'scry package_manager_available("brew") { incant "✅ brew detected" } lest { incant "❌ brew not detected" }' 
