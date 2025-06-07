@@ -34,6 +34,8 @@ jobs:
             
             ## 🚀 Features
             - Cross-platform scripting and automation
+            - Function calls in expressions and assignments
+            - Mixed-type string concatenation and arithmetic
             - Package workflow management
             - Interactive REPL
             - Comprehensive built-in functions
@@ -77,6 +79,10 @@ jobs:
             
             # Add dependencies
             mage -c 'cast package_add("git", "latest", false)'
+            
+            # Try new function call features
+            mage -c 'incant "Platform: " + cast platform()'
+            mage -c 'conjure os_info = cast platform(); incant "Running on: " + os_info'
             
             # Run a script
             mage examples/system-info.mage
@@ -226,9 +232,9 @@ jobs:
           # Test version
           ./mage --version
 
-          # Test system detection
-          ./mage -c 'incant "Platform: " platform()'
-          ./mage -c 'incant "Architecture: " architecture()'
+          # Test system detection with new function call syntax
+          ./mage -c 'incant "Platform: " + cast platform()'
+          ./mage -c 'incant "Architecture: " + cast architecture()'
 
           # Test package workflow
           mkdir test-release
@@ -245,9 +251,9 @@ jobs:
           # Test version
           .\mage.exe --version
 
-          # Test system detection
-          .\mage.exe -c 'incant "Platform: " platform()'
-          .\mage.exe -c 'incant "Architecture: " architecture()'
+          # Test system detection with new function call syntax
+          .\mage.exe -c 'incant "Platform: " + cast platform()'
+          .\mage.exe -c 'incant "Architecture: " + cast architecture()'
 
           # Test package workflow
           mkdir test-release

@@ -6,13 +6,21 @@ use std::io::{self, Write};
 #[cfg(not(target_family = "windows"))]
 use std::env;
 
+#[derive(Clone)]
 pub struct FunctionDef<'i> {
     params: Vec<String>,
     body: Vec<pest::iterators::Pair<'i, Rule>>,
 }
 
 #[derive(Debug, Clone)]
-enum ExprValue {
+pub enum FunctionResult {
+    None,
+    Value(ExprValue),
+    Return(ExprValue),
+}
+
+#[derive(Debug, Clone)]
+pub enum ExprValue {
     String(String),
     Number(f64),
     Boolean(bool),
@@ -611,6 +619,74 @@ fn evaluate_term(pair: pest::iterators::Pair<Rule>, scope: &HashMap<String, Stri
     result
 }
 
+fn evaluate_builtin_function_call(
+    pair: pest::iterators::Pair<Rule>,
+    scope: &HashMap<String, String>,
+) -> ExprValue {
+    let mut inner = pair.into_inner();
+    let name = inner.next().unwrap().as_str();
+    let args_pair = inner.next();
+    let mut args: Vec<String> = Vec::new();
+    
+    if let Some(args_pair) = args_pair {
+        if args_pair.as_rule() == Rule::arg_list {
+            args = args_pair
+                .into_inner()
+                .map(|a| {
+                    let arg_str = a.as_str();
+                    // Handle different argument types
+                    if arg_str.starts_with('"') && arg_str.ends_with('"') {
+                        // String literal - remove quotes, process escapes, and interpolate
+                        let unquoted = arg_str.trim_matches('"');
+                        let escaped = process_escape_sequences(unquoted);
+                        interpolate(&escaped, &mut scope.clone())
+                    } else if arg_str.parse::<f64>().is_ok() {
+                        // Number literal - keep as is
+                        arg_str.to_string()
+                    } else if arg_str == "true" || arg_str == "false" {
+                        // Boolean literal - keep as is
+                        arg_str.to_string()
+                    } else {
+                        // Variable reference - look up in scope
+                        scope.get(arg_str).cloned().unwrap_or_else(|| {
+                            eprintln!(
+                                "⚠️  Warning: Variable '{}' not found, using literal value",
+                                arg_str
+                            );
+                            arg_str.to_string()
+                        })
+                    }
+                })
+                .collect();
+        }
+    }
+
+    // Check if it's a built-in function
+    if builtins::is_builtin(name) {
+        match builtins::call_builtin(name, args) {
+            Ok(result) => {
+                // Convert builtin result to ExprValue
+                match result {
+                    builtins::BuiltinValue::None => ExprValue::String("".to_string()),
+                    builtins::BuiltinValue::String(s) => ExprValue::String(s),
+                    builtins::BuiltinValue::Number(n) => ExprValue::Number(n),
+                    builtins::BuiltinValue::Boolean(b) => ExprValue::Boolean(b),
+                    builtins::BuiltinValue::Array(l) => ExprValue::List(
+                        l.into_iter().map(|s| ExprValue::String(s)).collect()
+                    ),
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Error calling {}: {}", name, e);
+                ExprValue::String("".to_string())
+            }
+        }
+    } else {
+        // For user-defined functions, return a placeholder for now
+        ExprValue::String(format!("USER_FUNCTION_CALL:{}", name))
+    }
+}
+
 fn evaluate_factor(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, String>,
@@ -680,6 +756,12 @@ fn evaluate_factor(
                         ExprValue::String(format!("${{{}}}", var_name))
                     }
                 }
+                Rule::cast => {
+                    // Handle function calls in expressions
+                    // For now, we'll evaluate built-in functions only
+                    // User-defined functions will need a different approach
+                    evaluate_builtin_function_call(inner_value, scope)
+                }
                 _ => ExprValue::Number(0.0),
             }
         }
@@ -700,6 +782,13 @@ fn apply_add_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
         },
         (ExprValue::String(l), ExprValue::String(r)) if op == "+" => {
             ExprValue::String(format!("{}{}", l, r))
+        }
+        // Mixed-type string concatenation - convert other types to strings
+        (ExprValue::String(l), right_val) if op == "+" => {
+            ExprValue::String(format!("{}{}", l, right_val))
+        }
+        (left_val, ExprValue::String(r)) if op == "+" => {
+            ExprValue::String(format!("{}{}", left_val, r))
         }
         (ExprValue::List(l), ExprValue::List(r)) if op == "+" => {
             ExprValue::List(l.iter().chain(r.iter()).cloned().collect())

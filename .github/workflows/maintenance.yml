@@ -243,7 +243,7 @@ jobs:
             --warmup 2 \
             --runs 10 \
             "./target/release/mage -c 'cast write_file(\"test.txt\", \"Hello\")'" \
-            "./target/release/mage -c 'cast file_exists(\"test.txt\")'"
+            "./target/release/mage -c 'incant \"File exists: \" + cast file_exists(\"test.txt\")'"
 
           echo "✅ Performance benchmarks completed!"
 

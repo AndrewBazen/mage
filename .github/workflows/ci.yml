@@ -92,20 +92,29 @@ jobs:
           echo 'incant "Hello from mage!"' > test.mage
           ./target/release/mage test.mage
 
-          # Test system detection
-          echo 'incant platform()' > test.mage
+          # Test system detection with new function call syntax
+          echo 'incant "Platform: " + cast platform()' > test.mage
           ./target/release/mage test.mage
-          echo 'incant architecture()' > test.mage
+          echo 'incant "Architecture: " + cast architecture()' > test.mage
           ./target/release/mage test.mage
 
           # Test file operations
           echo 'cast write_file("test.txt", "Hello World")' > test.mage
           ./target/release/mage test.mage
-          echo 'scry file_exists("test.txt") { incant "File created successfully" }' > test.mage
+          echo 'scry cast file_exists("test.txt") == true { incant "File created successfully" }' > test.mage
           ./target/release/mage test.mage
 
-          # Test package manager detection
-          echo 'cast detect_package_managers()' > test.mage
+          # Test package manager detection with function calls in expressions
+          echo 'incant "Package managers: " + cast detect_package_managers()' > test.mage
+          ./target/release/mage test.mage
+
+          # Test new function call features
+          echo 'conjure platform_name = cast platform()' > test.mage
+          echo 'incant "Running on: " + platform_name' >> test.mage
+          ./target/release/mage test.mage
+
+          # Test mixed-type string concatenation
+          echo 'incant "Mixed types: " + 42 + " and " + true' > test.mage
           ./target/release/mage test.mage
 
       - name: Test mage scripts (Windows)
@@ -115,20 +124,29 @@ jobs:
           echo 'incant "Hello from mage!"' > test.mage
           .\target\release\mage.exe test.mage
 
-          # Test system detection
-          echo 'incant platform()' > test.mage
+          # Test system detection with new function call syntax
+          echo 'incant "Platform: " + cast platform()' > test.mage
           .\target\release\mage.exe test.mage
-          echo 'incant architecture()' > test.mage
+          echo 'incant "Architecture: " + cast architecture()' > test.mage
           .\target\release\mage.exe test.mage
 
           # Test file operations
           echo 'cast write_file("test.txt", "Hello World")' > test.mage
           .\target\release\mage.exe test.mage
-          echo 'scry file_exists("test.txt") { incant "File created successfully" }' > test.mage
+          echo 'scry cast file_exists("test.txt") == true { incant "File created successfully" }' > test.mage
           .\target\release\mage.exe test.mage
 
-          # Test package manager detection
-          echo 'cast detect_package_managers()' > test.mage
+          # Test package manager detection with function calls in expressions
+          echo 'incant "Package managers: " + cast detect_package_managers()' > test.mage
+          .\target\release\mage.exe test.mage
+
+          # Test new function call features
+          echo 'conjure platform_name = cast platform()' > test.mage
+          echo 'incant "Running on: " + platform_name' >> test.mage
+          .\target\release\mage.exe test.mage
+
+          # Test mixed-type string concatenation
+          echo 'incant "Mixed types: " + 42 + " and " + true' > test.mage
           .\target\release\mage.exe test.mage
 
   package-workflow-tests:
@@ -223,6 +241,54 @@ jobs:
 
           echo "✅ Example tests completed!"
 
+  function-call-integration-tests:
+    name: Function Call Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build mage
+        run: cargo build --release
+
+      - name: Test function calls in expressions
+        run: |
+          echo "🧪 Testing function calls in expressions..."
+          
+          # Test basic function call in expression
+          ./target/release/mage -c 'incant "Platform: " + cast platform()'
+          
+          # Test function call in assignment
+          ./target/release/mage -c 'conjure os_info = cast platform(); incant "OS: " + os_info'
+          
+          # Test function calls in conditionals
+          ./target/release/mage -c 'scry cast file_exists("Cargo.toml") == true { incant "✅ Cargo.toml found" }'
+          
+          # Test mixed-type arithmetic
+          ./target/release/mage -c 'incant "Number plus string: " + 42 + " = answer"'
+          ./target/release/mage -c 'incant "Boolean: " + true + " is true"'
+          
+          # Test arithmetic with function results
+          ./target/release/mage -c 'incant "Architecture info: [" + cast architecture() + "]"'
+          
+          echo "✅ Function call integration tests passed!"
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
@@ -310,32 +376,32 @@ jobs:
       - name: Test package manager detection (Ubuntu)
         if: runner.os == 'Linux'
         run: |
-          ./target/release/mage -c 'incant "Platform: " platform()'
-          ./target/release/mage -c 'incant "Package managers: " detect_package_managers()'
-          ./target/release/mage -c 'incant "Primary PM: " get_primary_package_manager()'
+          ./target/release/mage -c 'incant "Platform: " + cast platform()'
+          ./target/release/mage -c 'incant "Package managers: " + cast detect_package_managers()'
+          ./target/release/mage -c 'incant "Primary PM: " + cast get_primary_package_manager()'
 
           # Should detect apt on Ubuntu
-          ./target/release/mage -c 'scry package_manager_available("apt") { incant "✅ apt detected" } lest { incant "❌ apt not detected" }'
+          ./target/release/mage -c 'scry cast package_manager_available("apt") == true { incant "✅ apt detected" } lest { incant "❌ apt not detected" }'
 
       - name: Test package manager detection (Windows)
         if: runner.os == 'Windows'
         run: |
-          .\target\release\mage.exe -c 'incant "Platform: " platform()'
-          .\target\release\mage.exe -c 'incant "Package managers: " detect_package_managers()'
-          .\target\release\mage.exe -c 'incant "Primary PM: " get_primary_package_manager()'
+          .\target\release\mage.exe -c 'incant "Platform: " + cast platform()'
+          .\target\release\mage.exe -c 'incant "Package managers: " + cast detect_package_managers()'
+          .\target\release\mage.exe -c 'incant "Primary PM: " + cast get_primary_package_manager()'
 
           # Should detect winget or choco on Windows
-          .\target\release\mage.exe -c 'scry package_manager_available("winget") { incant "✅ winget detected" } morph package_manager_available("choco") { incant "✅ choco detected" } lest { incant "⚠️ No package manager detected" }'
+          .\target\release\mage.exe -c 'scry cast package_manager_available("winget") == true { incant "✅ winget detected" } morph cast package_manager_available("choco") == true { incant "✅ choco detected" } lest { incant "⚠️ No package manager detected" }'
 
       - name: Test package manager detection (macOS)
         if: runner.os == 'macOS'
         run: |
-          ./target/release/mage -c 'incant "Platform: " platform()'
-          ./target/release/mage -c 'incant "Package managers: " detect_package_managers()'
-          ./target/release/mage -c 'incant "Primary PM: " get_primary_package_manager()'
+          ./target/release/mage -c 'incant "Platform: " + cast platform()'
+          ./target/release/mage -c 'incant "Package managers: " + cast detect_package_managers()'
+          ./target/release/mage -c 'incant "Primary PM: " + cast get_primary_package_manager()'
 
           # Install Homebrew if not present (common in CI)
           which brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
           # Should detect brew on macOS
-          ./target/release/mage -c 'scry package_manager_available("brew") { incant "✅ brew detected" } lest { incant "❌ brew not detected" }'
+          ./target/release/mage -c 'scry cast package_manager_available("brew") == true { incant "✅ brew detected" } lest { incant "❌ brew not detected" }'
