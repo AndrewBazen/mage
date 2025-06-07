@@ -19,6 +19,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
@@ -57,6 +58,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
@@ -87,35 +89,47 @@ jobs:
           chmod +x target/release/mage
 
           # Test basic functionality
-          echo 'incant "Hello from mage!"' | ./target/release/mage -
+          echo 'incant "Hello from mage!"' > test.mage
+          ./target/release/mage test.mage
 
           # Test system detection
-          ./target/release/mage -c 'incant platform()'
-          ./target/release/mage -c 'incant architecture()'
+          echo 'incant platform()' > test.mage
+          ./target/release/mage test.mage
+          echo 'incant architecture()' > test.mage
+          ./target/release/mage test.mage
 
           # Test file operations
-          ./target/release/mage -c 'cast write_file("test.txt", "Hello World")'
-          ./target/release/mage -c 'scry file_exists("test.txt") { incant "File created successfully" }'
+          echo 'cast write_file("test.txt", "Hello World")' > test.mage
+          ./target/release/mage test.mage
+          echo 'scry file_exists("test.txt") { incant "File created successfully" }' > test.mage
+          ./target/release/mage test.mage
 
           # Test package manager detection
-          ./target/release/mage -c 'cast detect_package_managers()'
+          echo 'cast detect_package_managers()' > test.mage
+          ./target/release/mage test.mage
 
       - name: Test mage scripts (Windows)
         if: runner.os == 'Windows'
         run: |
           # Test basic functionality
-          echo 'incant "Hello from mage!"' | .\target\release\mage.exe -
+          echo 'incant "Hello from mage!"' > test.mage
+          .\target\release\mage.exe test.mage
 
           # Test system detection
-          .\target\release\mage.exe -c 'incant platform()'
-          .\target\release\mage.exe -c 'incant architecture()'
+          echo 'incant platform()' > test.mage
+          .\target\release\mage.exe test.mage
+          echo 'incant architecture()' > test.mage
+          .\target\release\mage.exe test.mage
 
           # Test file operations
-          .\target\release\mage.exe -c 'cast write_file("test.txt", "Hello World")'
-          .\target\release\mage.exe -c 'scry file_exists("test.txt") { incant "File created successfully" }'
+          echo 'cast write_file("test.txt", "Hello World")' > test.mage
+          .\target\release\mage.exe test.mage
+          echo 'scry file_exists("test.txt") { incant "File created successfully" }' > test.mage
+          .\target\release\mage.exe test.mage
 
           # Test package manager detection
-          .\target\release\mage.exe -c 'cast detect_package_managers()'
+          echo 'cast detect_package_managers()' > test.mage
+          .\target\release\mage.exe test.mage
 
   package-workflow-tests:
     name: Package Workflow Tests
@@ -124,8 +138,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
@@ -181,6 +196,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
@@ -216,6 +232,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Install cargo-audit
@@ -232,6 +249,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
@@ -270,8 +288,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache cargo registry
