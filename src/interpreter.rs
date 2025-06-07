@@ -732,8 +732,8 @@ fn apply_mult_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
     }
 }
 
-fn eval_condition<'i>(
-    pair: pest::iterators::Pair<'i, Rule>,
+fn eval_condition(
+    pair: pest::iterators::Pair<'_, Rule>,
     scope: &mut HashMap<String, String>,
 ) -> bool {
     let mut inner = pair.into_inner();
