@@ -1,218 +1,234 @@
 name: Documentation
 
 on:
-    push:
-        branches: [main]
-        paths:
-            - "README.md"
-            - "examples/**"
-            - "docs/**"
-            - ".github/workflows/docs.yml"
-    pull_request:
-        branches: [main]
-        paths:
-            - "README.md"
-            - "examples/**"
-            - "docs/**"
-            - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "examples/**"
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "examples/**"
+      - "docs/**"
+      - ".github/workflows/docs.yml"
 
 permissions:
-    contents: read
-    pages: write
-    id-token: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-    group: "pages"
-    cancel-in-progress: false
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-    build-docs:
-        name: Build Documentation
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
 
-            - name: Cache cargo registry
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      ~/.cargo/registry
-                      ~/.cargo/git
-                      target
-                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install Rust
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
-            - name: Build mage
-              run: cargo build --release
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "18"
+      - name: Build mage
+        run: cargo build --release
 
-            - name: Install documentation tools
-              run: |
-                  npm install -g @mermaid-js/mermaid-cli || echo "⚠️ Mermaid CLI install failed"
-                  npm install -g markdown-toc || echo "⚠️ markdown-toc install failed"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
 
-            - name: Generate documentation
-              run: |
-                  mkdir -p docs/generated
+      - name: Install documentation tools
+        run: |
+          npm install -g @mermaid-js/mermaid-cli || echo "⚠️ Mermaid CLI install failed"
+          npm install -g markdown-toc || echo "⚠️ markdown-toc install failed"
 
-                  # Generate command reference
-                  ./target/release/mage --help > docs/generated/command-reference.txt
+      - name: Generate documentation
+        run: |
+          mkdir -p docs/generated
 
-                  # Generate builtin functions reference
-                  echo "# Built-in Functions Reference" > docs/generated/builtins.md
-                  echo "" >> docs/generated/builtins.md
-                  echo "This is an auto-generated reference of all built-in functions in mage." >> docs/generated/builtins.md
-                  echo "" >> docs/generated/builtins.md
+          # Generate command reference
+          ./target/release/mage --help > docs/generated/command-reference.txt
 
-                  # Extract builtin function documentation
-                  grep -n "fn.*builtin" src/builtins.rs | head -20 >> docs/generated/builtins.md || true
+          # Generate builtin functions reference
+          echo "# Built-in Functions Reference" > docs/generated/builtins.md
+          echo "" >> docs/generated/builtins.md
+          echo "This is an auto-generated reference of all built-in functions in mage." >> docs/generated/builtins.md
+          echo "" >> docs/generated/builtins.md
 
-                  # Generate example outputs
-                  echo "# Example Outputs" > docs/generated/examples.md
-                  echo "" >> docs/generated/examples.md
+          # Extract builtin function documentation
+          grep -n "fn.*builtin" src/builtins.rs | head -20 >> docs/generated/builtins.md || true
 
-                  # Run examples and capture output (non-interactive ones)
-                  echo "## System Information" >> docs/generated/examples.md
-                  echo '```' >> docs/generated/examples.md
-                  timeout 30s ./target/release/mage examples/system-info.mage >> docs/generated/examples.md 2>&1 || true
-                  echo '```' >> docs/generated/examples.md
-                  echo "" >> docs/generated/examples.md
+          # Generate example outputs
+          echo "# Example Outputs" > docs/generated/examples.md
+          echo "" >> docs/generated/examples.md
 
-                  # Generate table of contents for README
-                  if command -v markdown-toc >/dev/null 2>&1; then
-                      markdown-toc README.md --no-firsth1 > docs/generated/toc.md
+          # Run examples and capture output (non-interactive ones)
+          echo "## System Information" >> docs/generated/examples.md
+          echo '```' >> docs/generated/examples.md
+          timeout 30s ./target/release/mage examples/system-info.mage >> docs/generated/examples.md 2>&1 || true
+          echo '```' >> docs/generated/examples.md
+          echo "" >> docs/generated/examples.md
+
+          # Generate table of contents for README
+          if command -v markdown-toc >/dev/null 2>&1; then
+              markdown-toc README.md --no-firsth1 > docs/generated/toc.md
+          else
+              echo "# Table of Contents" > docs/generated/toc.md
+              echo "markdown-toc not available" >> docs/generated/toc.md
+          fi
+
+      - name: Create documentation website
+        run: |
+          mkdir -p site
+
+          # Create simple documentation page
+          cat > site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Mage Language Documentation</title>
+              <link rel="icon" type="image/png" href="assets/icons/mage64.png" onerror="this.style.display='none'">
+              <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+          </head>
+          <body class="bg-gray-900 text-white">
+              <div class="container mx-auto px-4 py-8">
+                  <header class="text-center mb-12">
+                      <h1 class="text-5xl font-bold text-purple-400">🔮 Mage Language</h1>
+                      <p class="text-xl text-gray-300">Cross-platform scripting and automation with magic</p>
+                  </header>
+                  <main>
+                      <section class="mb-12">
+                          <h2 class="text-3xl font-bold mb-6">Documentation</h2>
+                          <p>Welcome to the Mage Language documentation.</p>
+                      </section>
+                  </main>
+              </div>
+          </body>
+          </html>
+          EOF
+
+          # Copy documentation files
+          cp README.md site/ || echo "README.md not found"
+          cp -r examples site/ || echo "examples directory not found"
+
+          # Copy assets if they exist
+          if [ -d assets ]; then
+              cp -r assets site/
+              echo "✅ Assets copied to site"
+          else
+              echo "⚠️ No assets directory found"
+              mkdir -p site/assets/icons
+          fi
+
+          # Copy generated docs if they exist
+          if [ -d docs/generated ]; then
+              cp -r docs/generated site/
+          fi
+
+      - name: Upload documentation artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./site
+
+  deploy-docs:
+    name: Deploy Documentation
+    if: github.ref == 'refs/heads/main'
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  validate-examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Install Rust
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+
+      - name: Build mage
+        run: cargo build --release
+
+      - name: Validate example syntax
+        run: |
+          echo "🔍 Validating example scripts..."
+
+          # Find all .mage files in examples
+          if [ -d examples ]; then
+              find examples -name "*.mage" -type f | while read file; do
+                  echo "Checking $file..."
+                  
+                  # Simple syntax check (file exists and is readable)
+                  if [ -r "$file" ]; then
+                      echo "✅ $file syntax OK"
                   else
-                      echo "# Table of Contents" > docs/generated/toc.md
-                      echo "markdown-toc not available" >> docs/generated/toc.md
+                      echo "❌ $file has issues"
+                      exit 1
                   fi
+              done
+          else
+              echo "⚠️ No examples directory found"
+          fi
 
-            - name: Create documentation website
-              run: |
-                  mkdir -p site
+          echo "✅ All example scripts validated!"
 
-                  # Create simple documentation page
-                  cat > site/index.html << 'EOF'
-                  <!DOCTYPE html>
-                  <html lang="en">
-                  <head>
-                      <meta charset="UTF-8">
-                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <title>Mage Language Documentation</title>
-                      <link rel="icon" type="image/png" href="assets/icons/mage64.png" onerror="this.style.display='none'">
-                      <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-                  </head>
-                  <body class="bg-gray-900 text-white">
-                      <div class="container mx-auto px-4 py-8">
-                          <header class="text-center mb-12">
-                              <h1 class="text-5xl font-bold text-purple-400">🔮 Mage Language</h1>
-                              <p class="text-xl text-gray-300">Cross-platform scripting and automation with magic</p>
-                          </header>
-                          <main>
-                              <section class="mb-12">
-                                  <h2 class="text-3xl font-bold mb-6">Documentation</h2>
-                                  <p>Welcome to the Mage Language documentation.</p>
-                              </section>
-                          </main>
-                      </div>
-                  </body>
-                  </html>
-                  EOF
+      - name: Check documentation links
+        run: |
+          echo "🔍 Checking documentation links..."
 
-                  # Copy documentation files
-                  cp README.md site/ || echo "README.md not found"
-                  cp -r examples site/ || echo "examples directory not found"
+          # Check if all referenced files exist
+          if [ -f examples/PACKAGE-WORKFLOWS.md ]; then
+              echo "✅ Package workflows documentation exists"
+          else
+              echo "⚠️ Package workflows documentation missing"
+          fi
 
-                  # Copy assets if they exist
-                  if [ -d assets ]; then
-                      cp -r assets site/
-                      echo "✅ Assets copied to site"
-                  else
-                      echo "⚠️ No assets directory found"
-                      mkdir -p site/assets/icons
-                  fi
+          # Check if example files exist
+          for example in package-workflow-demo.mage web-project-setup.mage example-mage.toml; do
+              if [ -f "examples/$example" ]; then
+                  echo "✅ $example exists"
+              else
+                  echo "⚠️ $example missing"
+              fi
+          done
 
-                  # Copy generated docs if they exist
-                  if [ -d docs/generated ]; then
-                      cp -r docs/generated site/
-                  fi
-
-            - name: Upload documentation artifact
-              uses: actions/upload-pages-artifact@v2
-              with:
-                  path: ./site
-
-    deploy-docs:
-        name: Deploy Documentation
-        if: github.ref == 'refs/heads/main'
-        needs: build-docs
-        runs-on: ubuntu-latest
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        steps:
-            - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v2
-
-    validate-examples:
-        name: Validate Examples
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
-
-            - name: Build mage
-              run: cargo build --release
-
-            - name: Validate example syntax
-              run: |
-                  echo "🔍 Validating example scripts..."
-
-                  # Find all .mage files in examples
-                  if [ -d examples ]; then
-                      find examples -name "*.mage" -type f | while read file; do
-                          echo "Checking $file..."
-                          
-                          # Simple syntax check (file exists and is readable)
-                          if [ -r "$file" ]; then
-                              echo "✅ $file syntax OK"
-                          else
-                              echo "❌ $file has issues"
-                              exit 1
-                          fi
-                      done
-                  else
-                      echo "⚠️ No examples directory found"
-                  fi
-
-                  echo "✅ All example scripts validated!"
-
-            - name: Check documentation links
-              run: |
-                  echo "🔍 Checking documentation links..."
-
-                  # Check if all referenced files exist
-                  if [ -f examples/PACKAGE-WORKFLOWS.md ]; then
-                      echo "✅ Package workflows documentation exists"
-                  else
-                      echo "⚠️ Package workflows documentation missing"
-                  fi
-
-                  # Check if example files exist
-                  for example in package-workflow-demo.mage web-project-setup.mage example-mage.toml; do
-                      if [ -f "examples/$example" ]; then
-                          echo "✅ $example exists"
-                      else
-                          echo "⚠️ $example missing"
-                      fi
-                  done
-
-                  echo "✅ Documentation links validation completed!"
+          echo "✅ Documentation links validation completed!"

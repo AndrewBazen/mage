@@ -16,10 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -29,7 +34,9 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Check formatting
         run: cargo fmt --all -- --check
 
@@ -51,10 +58,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -63,12 +76,18 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ matrix.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.rust }}-cargo-
+
       - name: Build
         run: cargo build --verbose
+
       - name: Run tests
         run: cargo test --verbose
+
       - name: Build release
         run: cargo build --release --verbose
+
       # Test mage language functionality
       - name: Test mage scripts (Ubuntu/macOS)
         if: runner.os != 'Windows'
@@ -113,8 +132,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -124,6 +150,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build mage
         run: cargo build --release
@@ -164,8 +192,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -175,6 +210,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build mage
         run: cargo build --release
@@ -195,8 +232,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Install cargo-audit
         run: cargo install cargo-audit
@@ -210,8 +254,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -221,6 +272,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Run benchmarks
         run: |
@@ -247,8 +300,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Build mage
         run: cargo build --release

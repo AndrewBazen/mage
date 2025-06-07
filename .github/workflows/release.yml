@@ -126,10 +126,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
+
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
 
       - name: Install musl tools (Linux musl only)
         if: matrix.target == 'x86_64-unknown-linux-musl'
@@ -145,6 +150,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ matrix.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.target }}-cargo-
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }} --verbose
