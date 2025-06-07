@@ -222,6 +222,14 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
             )))
         }
 
+        // External Package Integration
+        "from_package" => {
+            if args.len() < 2 {
+                return Err("from_package() requires at least 2 arguments: package_name, command, [args...]".to_string());
+            }
+            from_package(&args[0], &args[1], &args[2..])
+        }
+
         _ => Err(format!("Unknown builtin function: {}", name)),
     }
 }
@@ -258,6 +266,7 @@ pub fn is_builtin(name: &str) -> bool {
             | "package_info"
             | "download"
             | "env_var"
+            | "from_package"
     )
 }
 
@@ -1071,4 +1080,77 @@ fn package_info(package: &str) -> Result<BuiltinValue, String> {
         package
     );
     Ok(BuiltinValue::String(info))
+}
+
+// External Package Integration
+fn from_package(package: &str, command: &str, args: &[String]) -> Result<BuiltinValue, String> {
+    // Build the command to execute
+    let mut cmd_args = vec![command.to_string()];
+    cmd_args.extend_from_slice(args);
+    
+    // Try to find the package executable in common locations
+    let executable = find_package_executable(package)?;
+    
+    // Execute the command
+    let output = Command::new(&executable)
+        .args(&cmd_args)
+        .output()
+        .map_err(|e| format!("Failed to execute {} {}: {}", package, command, e))?;
+    
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(BuiltinValue::String(stdout.trim().to_string()))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("{} {} failed: {}", package, command, stderr))
+    }
+}
+
+fn find_package_executable(package: &str) -> Result<String, String> {
+    // Check if the package is already in PATH
+    if let Ok(_) = Command::new(package).arg("--version").output() {
+        return Ok(package.to_string());
+    }
+    
+    // Common package mappings and locations
+    let executable = match package {
+        "git" => "git",
+        "node" | "nodejs" => "node", 
+        "npm" => "npm",
+        "python" | "python3" => {
+            // Try python3 first, then python
+            if Command::new("python3").arg("--version").output().is_ok() {
+                "python3"
+            } else {
+                "python"
+            }
+        },
+        "pip" | "pip3" => {
+            if Command::new("pip3").arg("--version").output().is_ok() {
+                "pip3"
+            } else {
+                "pip"
+            }
+        },
+        "docker" => "docker",
+        "kubectl" => "kubectl",
+        "terraform" => "terraform",
+        "ansible" => "ansible",
+        "curl" => "curl",
+        "wget" => "wget",
+        "jq" => "jq",
+        _ => package, // Use package name as-is for unknown packages
+    };
+    
+    // Final validation that the executable exists
+    match Command::new(executable).arg("--help").output() {
+        Ok(_) => Ok(executable.to_string()),
+        Err(_) => {
+            // Try --version instead of --help for some tools
+            match Command::new(executable).arg("--version").output() {
+                Ok(_) => Ok(executable.to_string()),
+                Err(_) => Err(format!("Package '{}' not found or not executable", package))
+            }
+        }
+    }
 }

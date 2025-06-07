@@ -6,14 +6,14 @@
 incant "🌐 Web Development Project Setup"
 incant "================================="
 
-incant ""
+incant "\n"
 incant "🚀 Step 1: Initialize Project"
 incant "------------------------------"
 
 # Initialize the project
 cast package_init("my-web-app")
 
-incant ""
+incant "\n"
 incant "📦 Step 2: Add Core Dependencies"
 incant "---------------------------------"
 
@@ -28,7 +28,7 @@ incant "Adding web development tools..."
 cast package_add("nginx", "latest", false)
 cast package_add("redis", "latest", false)
 
-incant ""
+incant "\n"
 incant "🛠️  Step 3: Add Development Dependencies"
 incant "----------------------------------------"
 
@@ -37,12 +37,12 @@ cast package_add("curl", "latest", true)
 cast package_add("jq", "latest", true)
 cast package_add("docker", "latest", true)
 
-incant ""
+incant "\n"
 incant "📋 Step 4: View Project Dependencies"
 incant "------------------------------------"
 cast package_list()
 
-incant ""
+incant "\n"
 incant "⚙️  Step 5: Install Dependencies"
 incant "--------------------------------"
 
@@ -53,7 +53,7 @@ cast package_install()
 incant "Installing development dependencies..."
 cast package_install("--dev")
 
-incant ""
+incant "\n"
 incant "🔧 Step 6: Project Structure Setup"
 incant "-----------------------------------"
 
@@ -69,7 +69,7 @@ incant "  public/  - Static assets"
 incant "  config/  - Configuration files"
 incant "  docs/    - Documentation"
 
-incant ""
+incant "\n"
 incant "📝 Step 7: Create Configuration Files"
 incant "-------------------------------------"
 
@@ -112,7 +112,7 @@ incant "✅ Created configuration files:"
 incant "  package.json      - Node.js dependencies"
 incant "  requirements.txt  - Python dependencies"
 
-incant ""
+incant "\n"
 incant "🐳 Step 8: Docker Configuration"
 incant "-------------------------------"
 
@@ -182,7 +182,7 @@ incant "✅ Created Docker configuration:"
 incant "  Dockerfile         - Container definition"
 incant "  docker-compose.yml - Multi-service setup"
 
-incant ""
+incant "\n"
 incant "🚀 Step 9: Development Scripts"
 incant "------------------------------"
 
@@ -192,25 +192,25 @@ incant "  mage run setup  - Install all dependencies"
 incant "  mage run build  - Build the application"
 incant "  mage run test   - Run tests"
 
-incant ""
+incant "\n"
 incant "Custom scripts you can add:"
 incant "  mage scripts/dev-server.mage   - Start development server"
 incant "  mage scripts/deploy.mage       - Deploy to production"
 incant "  mage scripts/backup.mage       - Backup database"
 
-incant ""
+incant "\n"
 incant "🎯 Step 10: Next Steps"
 incant "----------------------"
 
 incant "Your web development environment is ready! 🎉"
-incant ""
+incant "\n"
 incant "To get started:"
 incant "1. cd my-web-app"
 incant "2. npm install              # Install Node.js packages"
 incant "3. pip install -r requirements.txt  # Install Python packages"
 incant "4. docker-compose up        # Start all services"
 incant "5. Open http://localhost:3000"
-incant ""
+incant "\n"
 incant "Project structure:"
 incant "my-web-app/"
 incant "├── mage.toml           # Mage project manifest"
@@ -224,7 +224,7 @@ incant "├── config/             # Configuration"
 incant "├── scripts/            # Mage scripts"
 incant "└── .mage/              # Package cache"
 
-incant ""
+incant "\n"
 incant "🌟 Features enabled:"
 incant "• 📦 Declarative dependency management"
 incant "• 🔄 Reproducible development environment"
@@ -233,5 +233,5 @@ incant "• 🧪 Testing framework setup"
 incant "• ⚡ Hot reload development"
 incant "• 🔒 Security best practices"
 
-incant ""
+incant "\n"
 incant "✨ Happy coding! 🚀" 

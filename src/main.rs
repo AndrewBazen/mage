@@ -9,6 +9,10 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 
+    /// Execute inline code
+    #[arg(short = 'c', long = "command")]
+    inline_command: Option<String>,
+
     /// Optional script file to run (shorthand for `run <SCRIPT>`)
     #[arg(global = false)]
     script: Option<String>,
@@ -78,8 +82,12 @@ fn main() {
             highlight_script(file);
         }
         None => {
+            // Check for inline command first
+            if let Some(code) = cli.inline_command {
+                run_inline_command(&code, cli.shell.as_deref());
+            }
             // If no command but a script is provided, run it
-            if let Some(script) = cli.script {
+            else if let Some(script) = cli.script {
                 run_script(&script, cli.shell.as_deref());
             } else {
                 // No subcommand and no script, start REPL by default
@@ -102,6 +110,13 @@ fn run_script(path: &str, shell: Option<&str>) {
     };
 
     if let Err(e) = run(&code, shell) {
+        eprintln!("❌ {}", e);
+        std::process::exit(1);
+    }
+}
+
+fn run_inline_command(code: &str, shell: Option<&str>) {
+    if let Err(e) = run(code, shell) {
         eprintln!("❌ {}", e);
         std::process::exit(1);
     }

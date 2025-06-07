@@ -287,6 +287,9 @@ jobs:
           # Test arithmetic with function results
           ./target/release/mage -c 'incant "Architecture info: [" + cast architecture() + "]"'
           
+          # Test external package integration
+          ./target/release/mage -c 'incant "Git: " + cast from_package("git", "--version")'
+          
           echo "✅ Function call integration tests passed!"
 
   security-audit:

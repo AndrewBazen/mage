@@ -1,0 +1,38 @@
+incant "🔮 Mage External Package Integration Demo"
+incant "============================================"
+
+incant "📦 Git Integration:"
+conjure git_version = cast from_package("git", "--version")
+incant "  Version: " + git_version
+
+conjure git_user = cast from_package("git", "config", "user.name")
+incant "  User: " + git_user
+
+conjure git_email = cast from_package("git", "config", "user.email")
+incant "  Email: " + git_email
+
+incant ""
+incant "🟢 Node.js Integration:"
+conjure node_version = cast from_package("node", "--version")
+incant "  Version: " + node_version
+
+incant ""
+incant "🐍 Python Integration:"
+conjure python_version = cast from_package("python", "--version")
+incant "  Version: " + python_version
+
+incant ""
+incant "📊 System Information via External Tools:"
+conjure current_dir = cast from_package("git", "rev-parse", "--show-toplevel")
+incant "  Git repo root: " + current_dir
+
+incant ""
+incant "✨ Function calls work in conditionals too:"
+scry cast from_package("git", "status", "--porcelain") != "" {
+    incant "  📝 Repository has uncommitted changes"
+} lest {
+    incant "  ✅ Repository is clean"
+}
+
+incant ""
+incant "🎯 External package integration complete!" 

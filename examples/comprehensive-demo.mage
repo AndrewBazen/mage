@@ -22,9 +22,9 @@ incant ""
 # 2. System Information
 incant "🖥️  2. System Information"
 incant "------------------------"
-conjure os = platform()
-conjure arch = architecture()
-conjure home = home_directory()
+conjure os = cast platform()
+conjure arch = cast architecture()
+conjure home = cast home_directory()
 
 incant "Platform: $os"
 incant "Architecture: $arch"
@@ -74,15 +74,15 @@ conjure test_content = "Hello from Mage! This is a test file."
 # Create a test file
 cast write_file(test_file, test_content)
 
-scry file_exists(test_file) {
+scry cast file_exists(test_file) {
     incant "✅ Test file created successfully!"
     
     # Read the file content
-    conjure content = read_file(test_file)
+    conjure content = cast read_file(test_file)
     incant "📄 File content: $content"
     
     # Clean up
-    cast delete_file(test_file)
+    cast remove_file(test_file)
     incant "🗑️  Test file cleaned up"
 } lest {
     incant "❌ Failed to create test file"
@@ -92,14 +92,14 @@ incant ""
 # 6. Package Manager Detection
 incant "📦 6. Package Manager Detection"
 incant "------------------------------"
-conjure pm_list = detect_package_managers()
-conjure primary_pm = get_primary_package_manager()
+conjure pm_list = cast detect_package_managers()
+conjure primary_pm = cast get_primary_package_manager()
 
 incant "Available package managers: $pm_list"
 incant "Primary package manager: $primary_pm"
 
 # Check specific package managers
-scry package_manager_available("git") {
+scry cast package_manager_available("git") {
     incant "✅ Git is available as a package manager"
 } lest {
     incant "❌ Git is not available as a package manager"
@@ -109,13 +109,13 @@ incant ""
 # 7. Directory Operations
 incant "📂 7. Directory Operations"
 incant "-------------------------"
-conjure current_dir = get_current_directory()
+conjure current_dir = cast get_current_directory()
 incant "Current directory: $current_dir"
 
 conjure test_dir = "test_directory"
 cast ensure_directory(test_dir)
 
-scry directory_exists(test_dir) {
+scry cast directory_exists(test_dir) {
     incant "✅ Test directory created successfully!"
     
     # Clean up
@@ -129,7 +129,7 @@ incant ""
 # 8. Environment Variables
 incant "🌍 8. Environment Variables"
 incant "--------------------------"
-conjure path_var = get_env("PATH")
+conjure path_var = cast get_env("PATH")
 scry path_var != "" {
     incant "✅ PATH environment variable found"
     # Don't print the full PATH as it's usually very long
@@ -140,7 +140,7 @@ scry path_var != "" {
 
 # Set and get a custom environment variable
 cast set_env("MAGE_TEST", "Hello World")
-conjure mage_test = get_env("MAGE_TEST")
+conjure mage_test = cast get_env("MAGE_TEST")
 incant "Custom env var MAGE_TEST: $mage_test"
 incant ""
 
@@ -148,8 +148,8 @@ incant ""
 incant "🔤 9. String Operations"
 incant "----------------------"
 conjure greeting = "Hello, Magical World!"
-conjure lowercase = to_lowercase(greeting)
-conjure uppercase = to_uppercase(greeting)
+conjure lowercase = cast to_lowercase(greeting)
+conjure uppercase = cast to_uppercase(greeting)
 
 incant "Original: $greeting"
 incant "Lowercase: $lowercase"
@@ -161,15 +161,15 @@ incant "🔢 10. Mathematical Operations"
 incant "-----------------------------"
 conjure a = 10
 conjure b = 5
-conjure sum = add(a, b)
-conjure product = multiply(a, b)
+conjure sum = cast add(a, b)
+conjure product = cast multiply(a, b)
 
 incant "$a + $b = $sum"
 incant "$a × $b = $product"
 incant ""
 
 # 11. Interactive Features (skip in CI)
-conjure is_ci = get_env("CI")
+conjure is_ci = cast get_env("CI")
 scry is_ci == "" {
     incant "🎮 11. Interactive Features"
     incant "-------------------------"

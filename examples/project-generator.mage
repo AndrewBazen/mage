@@ -2,57 +2,57 @@
 # Complete Dotfiles Management Demo
 # This script demonstrates all key concepts for dotfiles management with Mage
 
-conjure user_name = "Andre"
-conjure dotfiles_repo = "https://github.com/your-username/dotfiles.git"
+conjure user_name = cast git_config("user.name")
+conjure dotfiles_repo = "https://github.com/" + user_name + "/dotfiles.git"
 conjure dotfiles_dir = "$HOME/.dotfiles"
 
 incant "🧙‍♂️ Welcome to the Complete Dotfiles Demo, $user_name!"
 incant "✨ This demonstrates how to use Mage for dotfiles management"
 
 # === SYSTEM DETECTION ===
-incant ""
+incant "\n"
 incant "🔍 STEP 1: System Detection"
 incant "Detecting your operating system and environment..."
 
-evoke "ver 2>nul && echo OS: Windows || echo OS: Unix-like"
+incant "OS: " + cast platform()
 
 incant "👤 Current user:"
-evoke "whoami"
+incant "  " + cast env_var("USER")
 
 incant "📂 Current working directory:"
-evoke "cd"
+incant "  " + cast get_current_directory()
 
 incant "🏠 Home directory:"
-evoke "echo %USERPROFILE% 2>nul || echo $HOME"
+incant "  " + cast env_var("HOME")
 
 # === PACKAGE MANAGER DETECTION ===
-incant ""
+incant "\n"
 incant "📦 STEP 2: Package Manager Detection"
 incant "Checking what package managers are available..."
 
-evoke "choco --version 2>nul && echo ✅ Chocolatey available || echo ❌ Chocolatey not found"
-evoke "winget --version 2>nul && echo ✅ Winget available || echo ❌ Winget not found"
-evoke "brew --version 2>/dev/null && echo ✅ Homebrew available || echo ❌ Homebrew not found"
-evoke "apt --version 2>/dev/null && echo ✅ APT available || echo ❌ APT not found"
+incant "Chocolatey: " + cast package_manager_available("choco")
+incant "Winget: " + cast package_manager_available("winget")
+incant "Homebrew: " + cast package_manager_available("brew")
+incant "APT: " + cast package_manager_available("apt")
 
 # === GIT CONFIGURATION ===
-incant ""
+incant "\n"
 incant "🌱 STEP 3: Git Configuration Check"
 incant "Checking your Git setup..."
 
-evoke "git --version 2>nul || echo Git not installed"
-evoke "git config --global user.name 2>nul && echo Git user: $(git config --global user.name) || echo No Git user configured"
-evoke "git config --global user.email 2>nul && echo Git email: $(git config --global user.email) || echo No Git email configured"
+incant "Git version: " + cast git_version()
+incant "Git user: " + cast git_config("user.name")
+incant "Git email: " + cast git_config("user.email")
 
 # === DOTFILES REPOSITORY CHECK ===
-incant ""
+incant "\n"
 incant "📁 STEP 4: Dotfiles Repository Check"
 incant "Checking if dotfiles repository exists..."
 
-evoke "ls -la $dotfiles_dir 2>/dev/null || dir $dotfiles_dir 2>nul || echo Dotfiles directory not found at $dotfiles_dir"
+incant "Dotfiles directory: " + cast list_directory(dotfiles_dir)
 
 # === CONFIGURATION DEMONSTRATION ===
-incant ""
+incant "\n"
 incant "⚙️ STEP 5: Configuration Management Demo"
 incant "Demonstrating how to manage different environments..."
 
@@ -63,19 +63,20 @@ incant "Work email would be: $work_email"
 incant "Personal email would be: $personal_email"
 
 # === BACKUP DEMONSTRATION ===
-incant ""
+incant "\n"
 incant "💾 STEP 6: Backup Strategy Demo"
 incant "Showing how to backup existing configurations..."
 
-conjure backup_dir = "%USERPROFILE%\\.config-backup-demo"
+conjure backup_dir = cast env_var("HOME") + "/.config-backup-demo"
 incant "Creating demo backup directory: $backup_dir"
 
-evoke "mkdir $backup_dir 2>nul || mkdir -p ~/.config-backup-demo 2>/dev/null"
-evoke "echo Demo backup file > %USERPROFILE%\\.config-backup-demo\\demo.txt 2>nul || echo Demo backup file > ~/.config-backup-demo/demo.txt 2>/dev/null"
-evoke "dir %USERPROFILE%\\.config-backup-demo 2>nul || ls -la ~/.config-backup-demo 2>/dev/null"
+cast create_directory(backup_dir)
+cast write_file(backup_dir + "/demo.txt", "Demo backup file")
+incant "Backup directory contents:"
+incant "  " + cast list_directory(backup_dir)
 
 # === SYMLINK DEMONSTRATION ===
-incant ""
+incant "\n"
 incant "🔗 STEP 7: Symlink Strategy Demo"
 incant "Demonstrating how symlinks would be created..."
 
@@ -88,26 +89,26 @@ incant "  mklink %USERPROFILE%\\.bashrc %USERPROFILE%\\.dotfiles\\bash\\.bashrc"
 incant "  mklink %USERPROFILE%\\.gitconfig %USERPROFILE%\\.dotfiles\\git\\.gitconfig"
 
 # === ENVIRONMENT VARIABLES ===
-incant ""
+incant "\n"
 incant "🌐 STEP 8: Environment Variables"
 incant "Key environment variables for dotfiles management:"
 
-evoke "echo HOME: %USERPROFILE% 2>nul || echo HOME: $HOME"
-evoke "echo CONFIG: %LOCALAPPDATA% 2>nul || echo CONFIG: $HOME/.config"
-evoke "echo SHELL: %COMSPEC% 2>nul || echo SHELL: $SHELL"
+incant "HOME: " + cast env_var("HOME")
+incant "CONFIG: " + cast env_var("LOCALAPPDATA")
+incant "SHELL: " + cast env_var("COMSPEC")
 
 # === CLEANUP ===
-incant ""
+incant "\n"
 incant "🧹 STEP 9: Cleanup"
 incant "Cleaning up demo files..."
 
-evoke "rmdir /s /q %USERPROFILE%\\.config-backup-demo 2>nul || rm -rf ~/.config-backup-demo 2>/dev/null || echo Cleanup completed"
+cast remove_directory(backup_dir)
 
 # === SUMMARY ===
-incant ""
+incant "\n"
 incant "📋 SUMMARY: Complete Dotfiles Management with Mage"
 incant "=============================================="
-incant ""
+incant "\n"
 incant "✅ System detection and environment setup"
 incant "✅ Package manager detection and installation"
 incant "✅ Git configuration management"
@@ -123,5 +124,5 @@ incant "2. Organize configs in folders: bash/, zsh/, git/, nvim/, etc."
 incant "3. Create environment-specific .mageconfig files"
 incant "4. Write mage scripts for setup, maintenance, and syncing"
 incant "5. Test on different systems and environments"
-incant ""
+incant "\n"
 incant "🧙‍♂️ Happy dotfiles management with Mage! ✨" 

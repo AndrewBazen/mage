@@ -7,31 +7,31 @@
 
 incant "🔮 Mage System Information"
 incant "========================="
-incant ""
+incant "\n"
 
 # Platform information
-conjure os = platform()
-conjure arch = architecture()
+conjure os = cast platform()
+conjure arch = cast architecture()
 
 incant "🖥️  Platform: $os"
 incant "🏗️  Architecture: $arch"
-incant ""
+incant "\n"
 
 # Current directory and environment
-conjure current_dir = get_current_directory()
+conjure current_dir = cast get_current_directory()
 incant "📁 Current Directory: $current_dir"
-incant ""
+incant "\n"
 
 # Check available package managers
 incant "📦 Available Package Managers:"
-conjure pm_list = detect_package_managers()
+conjure pm_list = cast detect_package_managers()
 incant "   $pm_list"
-incant ""
+incant "\n"
 
 # Primary package manager
-conjure primary_pm = get_primary_package_manager()
+conjure primary_pm = cast get_primary_package_manager()
 incant "🎯 Primary Package Manager: $primary_pm"
-incant ""
+incant "\n"
 
 # Test conditional logic based on platform
 scry os == "linux" {
@@ -48,22 +48,22 @@ scry os == "linux" {
     incant "   Mage is expanding to new frontiers!"
 }
 
-incant ""
+incant "\n"
 incant "✨ System information gathering complete!"
 incant "   Mage is working correctly on your system."
 
 # Environment Variables
-incant ""
+incant "\n"
 incant "🌍 Environment:"
-cast env_var("USER", "unknown")
-cast env_var("HOME")
-cast env_var("PATH")
+incant "   USER: " + cast env_var("USER", "unknown")
+incant "   HOME: " + cast env_var("HOME")
+incant "   PATH: " + cast env_var("PATH")
 
 # Package Manager Detection
-incant ""
+incant "\n"
 incant "📦 Package Management:"
-cast detect_package_managers()
-cast get_primary_package_manager()
+incant "   Available: " + cast detect_package_managers()
+incant "   Primary: " + cast get_primary_package_manager()
 
 # Check specific package managers
 scry cast package_manager_available("brew") {
@@ -79,7 +79,7 @@ scry cast package_manager_available("apt") {
 }
 
 # File System Operations
-incant ""
+incant "\n"
 incant "📁 File System Operations:"
 
 # Create test directory
@@ -97,7 +97,7 @@ scry cast directory_exists(test_dir) {
 # Create a test file
 conjure test_file = "mage-test/test.txt"
 incant "Creating test file: $test_file"
-evoke "echo 'Hello from Mage!' > '$test_file'"
+cast write_file(test_file, "Hello from Mage!")
 
 # Check if file exists
 scry cast file_exists(test_file) {
@@ -135,7 +135,7 @@ scry cast file_exists(link_path) {
 }
 
 # Package Management Demo (commented out to avoid installing packages)
-incant ""
+incant "\n"
 incant "📦 Package Management Demo:"
 incant "(Package installation commands are commented out for safety)"
 
@@ -148,7 +148,7 @@ incant "(Package installation commands are commented out for safety)"
 # }
 
 # Network Operations Demo (commented out to avoid downloads)
-incant ""
+incant "\n"
 incant "🌐 Network Operations Demo:"
 incant "(Download commands are commented out for safety)"
 
@@ -158,10 +158,10 @@ incant "(Download commands are commented out for safety)"
 # cast download("https://httpbin.org/robots.txt", download_file)
 
 # Cleanup
-incant ""
+incant "\n"
 incant "🧹 Cleanup:"
 incant "Removing test directory: $test_dir"
-evoke "rm -rf '$test_dir' 2>/dev/null || rmdir /s /q '$test_dir' 2>nul"
+cast remove_directory(test_dir)
 
 incant ""
 incant "🎉 Built-in Functions Demo Complete!"
