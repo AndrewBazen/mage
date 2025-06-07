@@ -20,6 +20,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: "pages"
@@ -341,9 +342,12 @@ jobs:
           echo "✅ Artifact upload step completed"
           echo "📦 Attempted to upload ./site directory to GitHub Pages artifact"
           echo "🔍 Upload step outputs:"
-          echo "   - artifact-id: ${{ steps.upload.outputs.artifact-id || 'not available' }}"
+          echo "   - page-url: ${{ steps.upload.outputs.page-url || 'not available' }}"
           echo "   - artifact-url: ${{ steps.upload.outputs.artifact-url || 'not available' }}"
-          echo "🔍 Note: Artifact availability will be verified in deployment job"
+          echo "   - artifact-id: ${{ steps.upload.outputs.artifact-id || 'not available' }}"
+          echo "🔍 All available outputs:"
+          echo '${{ toJSON(steps.upload.outputs) }}'
+          echo "🔍 Note: Even if outputs show 'not available', the artifact may still be uploaded successfully"
 
   deploy-docs:
     name: Deploy Documentation
@@ -354,19 +358,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Wait for artifact availability
-        run: |
-          echo "⏳ Waiting for artifact to be fully uploaded..."
-          echo "🔍 Current runner environment:"
-          pwd
-          ls -la
-          echo "📦 Looking for artifacts from previous job..."
-          sleep 15
-          echo "✅ Proceeding with deployment"
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
         with:
           timeout: 600000
           error_count: 10
