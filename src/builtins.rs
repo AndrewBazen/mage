@@ -31,183 +31,233 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
         "architecture" => Ok(BuiltinValue::String(detect_architecture())),
         "home_directory" => Ok(BuiltinValue::String(get_home_directory())),
         "current_directory" => Ok(BuiltinValue::String(get_current_directory())),
-        
+
         // File System Operations
         "file_exists" => {
             if args.len() != 1 {
                 return Err("file_exists() requires exactly 1 argument: path".to_string());
             }
             Ok(BuiltinValue::Boolean(Path::new(&args[0]).exists()))
-        },
+        }
         "directory_exists" => {
             if args.len() != 1 {
                 return Err("directory_exists() requires exactly 1 argument: path".to_string());
             }
             Ok(BuiltinValue::Boolean(Path::new(&args[0]).is_dir()))
-        },
+        }
         "ensure_directory" => {
             if args.len() != 1 {
                 return Err("ensure_directory() requires exactly 1 argument: path".to_string());
             }
             ensure_directory(&args[0])
-        },
+        }
         "copy_file" => {
             if args.len() != 2 {
-                return Err("copy_file() requires exactly 2 arguments: source, destination".to_string());
+                return Err(
+                    "copy_file() requires exactly 2 arguments: source, destination".to_string(),
+                );
             }
             copy_file(&args[0], &args[1])
-        },
+        }
         "write_file" => {
             if args.len() != 2 {
                 return Err("write_file() requires exactly 2 arguments: path, content".to_string());
             }
             write_file(&args[0], &args[1])
-        },
+        }
         "remove_file" => {
             if args.len() != 1 {
                 return Err("remove_file() requires exactly 1 argument: path".to_string());
             }
             remove_file(&args[0])
-        },
+        }
         "remove_directory" => {
             if args.len() != 1 {
                 return Err("remove_directory() requires exactly 1 argument: path".to_string());
             }
             remove_directory(&args[0])
-        },
+        }
         "symlink" => {
             if args.len() != 2 {
                 return Err("symlink() requires exactly 2 arguments: source, target".to_string());
             }
             create_symlink(&args[0], &args[1])
-        },
+        }
         "make_executable" => {
             if args.len() != 1 {
                 return Err("make_executable() requires exactly 1 argument: path".to_string());
             }
             make_executable(&args[0])
-        },
+        }
         "is_executable" => {
             if args.len() != 1 {
                 return Err("is_executable() requires exactly 1 argument: path".to_string());
             }
             Ok(BuiltinValue::Boolean(is_executable(&args[0])))
-        },
-        
+        }
+
         // Package Management
         "detect_package_managers" => Ok(BuiltinValue::Array(detect_package_managers())),
         "get_primary_package_manager" => Ok(BuiltinValue::String(get_primary_package_manager())),
         "package_manager_available" => {
             if args.len() != 1 {
-                return Err("package_manager_available() requires exactly 1 argument: manager_name".to_string());
+                return Err(
+                    "package_manager_available() requires exactly 1 argument: manager_name"
+                        .to_string(),
+                );
             }
             Ok(BuiltinValue::Boolean(package_manager_available(&args[0])))
-        },
+        }
         "install_package" => {
             if args.len() != 1 {
-                return Err("install_package() requires exactly 1 argument: package_name".to_string());
+                return Err(
+                    "install_package() requires exactly 1 argument: package_name".to_string(),
+                );
             }
             install_package(&args[0])
-        },
+        }
         "package_installed" => {
             if args.len() != 1 {
-                return Err("package_installed() requires exactly 1 argument: package_name".to_string());
+                return Err(
+                    "package_installed() requires exactly 1 argument: package_name".to_string(),
+                );
             }
             Ok(BuiltinValue::Boolean(package_installed(&args[0])))
-        },
-        
+        }
+
         // Package Project Management
         "package_init" => {
             if args.len() != 1 {
                 return Err("package_init() requires exactly 1 argument: project_name".to_string());
             }
             package_init(&args[0])
-        },
+        }
         "package_add" => {
             if args.len() < 2 || args.len() > 3 {
-                return Err("package_add() requires 2-3 arguments: package_name, version, [--dev]".to_string());
+                return Err(
+                    "package_add() requires 2-3 arguments: package_name, version, [--dev]"
+                        .to_string(),
+                );
             }
             let is_dev = args.len() == 3 && args[2] == "--dev";
             package_add(&args[0], &args[1], is_dev)
-        },
+        }
         "package_remove" => {
             if args.len() != 1 {
-                return Err("package_remove() requires exactly 1 argument: package_name".to_string());
+                return Err(
+                    "package_remove() requires exactly 1 argument: package_name".to_string()
+                );
             }
             package_remove(&args[0])
-        },
+        }
         "package_install" => {
-            let dev = args.get(0).map(|s| s == "--dev").unwrap_or(false);
+            let dev = args.first().map(|s| s == "--dev").unwrap_or(false);
             package_install_deps(dev)
-        },
-        "package_list" => {
-            Ok(BuiltinValue::String(package_list()))
-        },
+        }
+        "package_list" => Ok(BuiltinValue::String(package_list())),
         "package_info" => {
             if args.len() != 1 {
                 return Err("package_info() requires exactly 1 argument: package_name".to_string());
             }
             package_info(&args[0])
-        },
-        
-        // Network Operations  
+        }
+
+        // Network Operations
         "download" => {
             if args.len() != 2 {
                 return Err("download() requires exactly 2 arguments: url, path".to_string());
             }
             download_file(&args[0], &args[1])
-        },
+        }
         "search_package" => {
             if args.len() != 1 {
-                return Err("search_package() requires exactly 1 argument: package_name".to_string());
+                return Err(
+                    "search_package() requires exactly 1 argument: package_name".to_string()
+                );
             }
             let pm = get_primary_package_manager();
             match search_for_package(&args[0], &pm) {
                 Some(found_name) => Ok(BuiltinValue::String(found_name)),
-                None => Ok(BuiltinValue::String(format!("Package '{}' not found", args[0]))),
+                None => Ok(BuiltinValue::String(format!(
+                    "Package '{}' not found",
+                    args[0]
+                ))),
             }
-        },
+        }
         "list_packages" => {
             if args.len() != 1 {
                 return Err("list_packages() requires exactly 1 argument: package_name".to_string());
             }
             let pm = get_primary_package_manager();
             let matches = search_for_packages(&args[0], &pm);
-            
+
             if matches.is_empty() {
-                Ok(BuiltinValue::String(format!("No packages found matching '{}'", args[0])))
+                Ok(BuiltinValue::String(format!(
+                    "No packages found matching '{}'",
+                    args[0]
+                )))
             } else {
-                let mut result = format!("Found {} packages matching '{}':\n", matches.len(), args[0]);
+                let mut result =
+                    format!("Found {} packages matching '{}':\n", matches.len(), args[0]);
                 for (i, (name, id)) in matches.iter().enumerate() {
                     result.push_str(&format!("  {}: {} ({})\n", i + 1, name, id));
                 }
                 Ok(BuiltinValue::String(result))
             }
-        },
-        
+        }
+
         // Environment
         "env_var" => {
             if args.is_empty() || args.len() > 2 {
                 return Err("env_var() requires 1 or 2 arguments: name, [default]".to_string());
             }
-            let default = if args.len() == 2 { Some(&args[1]) } else { None };
-            Ok(BuiltinValue::String(get_env_var(&args[0], default.map(|s| s.as_str()))))
-        },
-        
+            let default = if args.len() == 2 {
+                Some(&args[1])
+            } else {
+                None
+            };
+            Ok(BuiltinValue::String(get_env_var(
+                &args[0],
+                default.map(|s| s.as_str()),
+            )))
+        }
+
         _ => Err(format!("Unknown builtin function: {}", name)),
     }
 }
 
 pub fn is_builtin(name: &str) -> bool {
-    matches!(name, 
-        "platform" | "architecture" | "home_directory" | "current_directory" |
-        "file_exists" | "directory_exists" | "ensure_directory" | "copy_file" | 
-        "symlink" | "make_executable" | "is_executable" |
-        "write_file" | "remove_file" | "remove_directory" |
-        "detect_package_managers" | "get_primary_package_manager" | "package_manager_available" |
-        "install_package" | "package_installed" | "search_package" | "list_packages" |
-        "package_init" | "package_add" | "package_remove" | "package_install" | "package_list" | "package_info" |
-        "download" | "env_var"
+    matches!(
+        name,
+        "platform"
+            | "architecture"
+            | "home_directory"
+            | "current_directory"
+            | "file_exists"
+            | "directory_exists"
+            | "ensure_directory"
+            | "copy_file"
+            | "symlink"
+            | "make_executable"
+            | "is_executable"
+            | "write_file"
+            | "remove_file"
+            | "remove_directory"
+            | "detect_package_managers"
+            | "get_primary_package_manager"
+            | "package_manager_available"
+            | "install_package"
+            | "package_installed"
+            | "search_package"
+            | "list_packages"
+            | "package_init"
+            | "package_add"
+            | "package_remove"
+            | "package_install"
+            | "package_list"
+            | "package_info"
+            | "download"
+            | "env_var"
     )
 }
 
@@ -255,16 +305,22 @@ fn create_symlink(source: &str, target: &str) -> Result<BuiltinValue, String> {
         use std::os::windows::fs;
         match fs::symlink_file(source, target) {
             Ok(()) => Ok(BuiltinValue::Boolean(true)),
-            Err(e) => Err(format!("Failed to create symlink from '{}' to '{}': {}", source, target, e)),
+            Err(e) => Err(format!(
+                "Failed to create symlink from '{}' to '{}': {}",
+                source, target, e
+            )),
         }
     }
-    
+
     #[cfg(not(target_family = "windows"))]
     {
         use std::os::unix::fs;
         match fs::symlink(source, target) {
             Ok(()) => Ok(BuiltinValue::Boolean(true)),
-            Err(e) => Err(format!("Failed to create symlink from '{}' to '{}': {}", source, target, e)),
+            Err(e) => Err(format!(
+                "Failed to create symlink from '{}' to '{}': {}",
+                source, target, e
+            )),
         }
     }
 }
@@ -277,7 +333,7 @@ fn write_file(path: &str, content: &str) -> Result<BuiltinValue, String> {
                 .map_err(|e| format!("Failed to create parent directory: {}", e))?;
         }
     }
-    
+
     std::fs::write(path, content)
         .map(|_| BuiltinValue::Boolean(true))
         .map_err(|e| format!("Failed to write file '{}': {}", path, e))
@@ -314,7 +370,7 @@ fn make_executable(path: &str) -> Result<BuiltinValue, String> {
             Err(format!("File '{}' does not exist", path))
         }
     }
-    
+
     #[cfg(not(target_family = "windows"))]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -322,18 +378,28 @@ fn make_executable(path: &str) -> Result<BuiltinValue, String> {
         if !path.exists() {
             return Err(format!("File '{}' does not exist", path.display()));
         }
-        
+
         let metadata = match fs::metadata(path) {
             Ok(m) => m,
-            Err(e) => return Err(format!("Failed to get metadata for '{}': {}", path.display(), e)),
+            Err(e) => {
+                return Err(format!(
+                    "Failed to get metadata for '{}': {}",
+                    path.display(),
+                    e
+                ));
+            }
         };
-        
+
         let mut perms = metadata.permissions();
         perms.set_mode(perms.mode() | 0o111); // Add execute permission
-        
+
         match fs::set_permissions(path, perms) {
             Ok(()) => Ok(BuiltinValue::Boolean(true)),
-            Err(e) => Err(format!("Failed to make '{}' executable: {}", path.display(), e)),
+            Err(e) => Err(format!(
+                "Failed to make '{}' executable: {}",
+                path.display(),
+                e
+            )),
         }
     }
 }
@@ -350,7 +416,7 @@ fn is_executable(path: &str) -> bool {
             false
         }
     }
-    
+
     #[cfg(not(target_family = "windows"))]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -371,34 +437,37 @@ fn detect_package_managers() -> Vec<String> {
         "winget", "choco", "scoop", // Windows
         "pip", "npm", "cargo", "gem", // Language-specific
     ];
-    
+
     for manager in candidates {
         if which::which(manager).is_ok() {
             managers.push(manager.to_string());
         }
     }
-    
+
     managers
 }
 
 fn get_primary_package_manager() -> String {
     let platform = detect_platform();
     let available = detect_package_managers();
-    
+
     let priorities = match platform.as_str() {
         "linux" => vec!["apt", "yum", "dnf", "pacman", "zypper", "emerge"],
         "macos" => vec!["brew", "port"],
         "windows" => vec!["winget", "choco", "scoop"],
         _ => vec![],
     };
-    
+
     for pm in priorities {
         if available.contains(&pm.to_string()) {
             return pm.to_string();
         }
     }
-    
-    available.first().cloned().unwrap_or_else(|| "none".to_string())
+
+    available
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "none".to_string())
 }
 
 fn package_manager_available(manager: &str) -> bool {
@@ -410,17 +479,16 @@ fn install_package(package: &str) -> Result<BuiltinValue, String> {
     if pm == "none" {
         return Err("No package manager available".to_string());
     }
-    
+
     // Search for multiple packages and let user choose
     let package_name = match select_package_interactively(package, &pm) {
         Some(selected) => selected,
         None => {
             // Fallback to single search, then mapping
-            search_for_package(package, &pm)
-                .unwrap_or_else(|| map_package_name(package, &pm))
+            search_for_package(package, &pm).unwrap_or_else(|| map_package_name(package, &pm))
         }
     };
-    
+
     let install_cmd = match pm.as_str() {
         "apt" => format!("apt install -y {}", package_name),
         "yum" => format!("yum install -y {}", package_name),
@@ -432,15 +500,15 @@ fn install_package(package: &str) -> Result<BuiltinValue, String> {
         "scoop" => format!("scoop install {}", package_name),
         _ => return Err(format!("Unsupported package manager: {}", pm)),
     };
-    
+
     println!("📦 Installing {} using {}...", package_name, pm);
-    
+
     let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &install_cmd]).output()
+        Command::new("cmd").args(["/C", &install_cmd]).output()
     } else {
-        Command::new("sh").args(&["-c", &install_cmd]).output()
+        Command::new("sh").args(["-c", &install_cmd]).output()
     };
-    
+
     match output {
         Ok(output) => {
             if output.status.success() {
@@ -458,7 +526,7 @@ fn install_package(package: &str) -> Result<BuiltinValue, String> {
 fn package_installed(package: &str) -> bool {
     let pm = get_primary_package_manager();
     let package_name = map_package_name(package, &pm);
-    
+
     let check_cmd = match pm.as_str() {
         "apt" => format!("dpkg -l | grep -q '^ii.*{}'", package_name),
         "yum" | "dnf" => format!("rpm -q {}", package_name),
@@ -468,13 +536,13 @@ fn package_installed(package: &str) -> bool {
         "choco" => format!("choco list --local-only | findstr {}", package_name),
         _ => return false,
     };
-    
+
     let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &check_cmd]).output()
+        Command::new("cmd").args(["/C", &check_cmd]).output()
     } else {
-        Command::new("sh").args(&["-c", &check_cmd]).output()
+        Command::new("sh").args(["-c", &check_cmd]).output()
     };
-    
+
     output.map(|o| o.status.success()).unwrap_or(false)
 }
 
@@ -483,7 +551,7 @@ fn search_for_packages(package: &str, manager: &str) -> Vec<(String, String)> {
     let search_cmd = match manager {
         "apt" => format!("apt search '{}' 2>/dev/null", package),
         "yum" => format!("yum search {} 2>/dev/null", package),
-        "dnf" => format!("dnf search {} 2>/dev/null", package), 
+        "dnf" => format!("dnf search {} 2>/dev/null", package),
         "pacman" => format!("pacman -Ss '{}' 2>/dev/null", package),
         "brew" => format!("brew search '{}' 2>/dev/null", package),
         "winget" => format!("winget search {} 2>nul", package),
@@ -491,17 +559,17 @@ fn search_for_packages(package: &str, manager: &str) -> Vec<(String, String)> {
         "scoop" => format!("scoop search {} 2>nul", package),
         _ => return Vec::new(),
     };
-    
+
     let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &search_cmd]).output()
+        Command::new("cmd").args(["/C", &search_cmd]).output()
     } else {
-        Command::new("sh").args(&["-c", &search_cmd]).output()
+        Command::new("sh").args(["-c", &search_cmd]).output()
     };
-    
+
     match output {
         Ok(output) if output.status.success() => {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            
+
             // Parse search results based on package manager
             match manager {
                 "apt" => parse_apt_search_multiple(&stdout, package),
@@ -518,31 +586,35 @@ fn search_for_packages(package: &str, manager: &str) -> Vec<(String, String)> {
 
 fn select_package_interactively(package: &str, manager: &str) -> Option<String> {
     let matches = search_for_packages(package, manager);
-    
+
     if matches.is_empty() {
         return None;
     }
-    
+
     if matches.len() == 1 {
         // Only one match, use it automatically
         return Some(matches[0].1.clone());
     }
-    
+
     // Multiple matches - show selection menu
-    println!("🔍 Found {} packages matching '{}':", matches.len(), package);
+    println!(
+        "🔍 Found {} packages matching '{}':",
+        matches.len(),
+        package
+    );
     println!();
-    
+
     for (i, (name, id)) in matches.iter().enumerate() {
         println!("  {}: {} ({})", i + 1, name, id);
     }
-    
+
     println!();
     print!("Choose a package (1-{}, or 0 to cancel): ", matches.len());
-    
+
     // Flush stdout to ensure prompt appears
     use std::io::{self, Write};
     io::stdout().flush().ok();
-    
+
     // Read user input
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
@@ -566,7 +638,7 @@ fn search_for_package(package: &str, manager: &str) -> Option<String> {
     let search_cmd = match manager {
         "apt" => format!("apt search '^{}$' 2>/dev/null", package),
         "yum" => format!("yum search {} 2>/dev/null", package),
-        "dnf" => format!("dnf search {} 2>/dev/null", package), 
+        "dnf" => format!("dnf search {} 2>/dev/null", package),
         "pacman" => format!("pacman -Ss '^{}$' 2>/dev/null", package),
         "brew" => format!("brew search '^{}$' 2>/dev/null", package),
         "winget" => format!("winget search {} 2>nul", package),
@@ -574,17 +646,17 @@ fn search_for_package(package: &str, manager: &str) -> Option<String> {
         "scoop" => format!("scoop search {} 2>nul", package),
         _ => return None,
     };
-    
+
     let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &search_cmd]).output()
+        Command::new("cmd").args(["/C", &search_cmd]).output()
     } else {
-        Command::new("sh").args(&["-c", &search_cmd]).output()
+        Command::new("sh").args(["-c", &search_cmd]).output()
     };
-    
+
     match output {
         Ok(output) if output.status.success() => {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            
+
             // Parse search results based on package manager
             match manager {
                 "apt" => parse_apt_search(&stdout, package),
@@ -634,7 +706,7 @@ fn parse_winget_search(output: &str, package: &str) -> Option<String> {
     // winget search shows: "Name Id Version Available Source"
     let lines: Vec<&str> = output.lines().collect();
     let package_lower = package.to_lowercase();
-    
+
     // Priority 1: Single word exact name match
     for line in &lines {
         if !line.starts_with("Name") && !line.starts_with("-") && !line.trim().is_empty() {
@@ -649,7 +721,7 @@ fn parse_winget_search(output: &str, package: &str) -> Option<String> {
             }
         }
     }
-    
+
     // Priority 2: ID contains package name
     for line in &lines {
         if !line.starts_with("Name") && !line.starts_with("-") && !line.trim().is_empty() {
@@ -663,7 +735,7 @@ fn parse_winget_search(output: &str, package: &str) -> Option<String> {
             }
         }
     }
-    
+
     // Priority 3: Multi-word name starts with package name
     for line in &lines {
         if !line.starts_with("Name") && !line.starts_with("-") && !line.trim().is_empty() {
@@ -676,7 +748,7 @@ fn parse_winget_search(output: &str, package: &str) -> Option<String> {
             }
         }
     }
-    
+
     None
 }
 
@@ -710,35 +782,36 @@ fn parse_pacman_search(output: &str, package: &str) -> Option<String> {
 fn parse_winget_search_multiple(output: &str, package: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
     let package_lower = package.to_lowercase();
-    
+
     for line in output.lines() {
         if !line.starts_with("Name") && !line.starts_with("-") && !line.trim().is_empty() {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 2 {
                 let name = parts[0];
                 let id = parts[1];
-                
+
                 // Include if name or ID contains the search term
-                if name.to_lowercase().contains(&package_lower) || 
-                   id.to_lowercase().contains(&package_lower) {
+                if name.to_lowercase().contains(&package_lower)
+                    || id.to_lowercase().contains(&package_lower)
+                {
                     results.push((name.to_string(), id.to_string()));
                 }
             }
         }
     }
-    
+
     // Sort by relevance: exact matches first, then contains
     results.sort_by(|a, b| {
         let a_exact = a.0.to_lowercase() == package_lower || a.1.to_lowercase() == package_lower;
         let b_exact = b.0.to_lowercase() == package_lower || b.1.to_lowercase() == package_lower;
-        
+
         match (a_exact, b_exact) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
             _ => a.0.cmp(&b.0),
         }
     });
-    
+
     results.truncate(10); // Limit to 10 results
     results
 }
@@ -746,7 +819,7 @@ fn parse_winget_search_multiple(output: &str, package: &str) -> Vec<(String, Str
 fn parse_apt_search_multiple(output: &str, package: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
     let package_lower = package.to_lowercase();
-    
+
     for line in output.lines() {
         if !line.starts_with("WARNING") && line.contains('/') {
             if let Some(pkg_name) = line.split('/').next() {
@@ -756,7 +829,7 @@ fn parse_apt_search_multiple(output: &str, package: &str) -> Vec<(String, String
             }
         }
     }
-    
+
     results.sort();
     results.dedup();
     results.truncate(10);
@@ -766,14 +839,14 @@ fn parse_apt_search_multiple(output: &str, package: &str) -> Vec<(String, String
 fn parse_brew_search_multiple(output: &str, package: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
     let package_lower = package.to_lowercase();
-    
+
     for line in output.lines() {
         let line = line.trim();
         if !line.is_empty() && line.to_lowercase().contains(&package_lower) {
             results.push((line.to_string(), line.to_string()));
         }
     }
-    
+
     results.sort();
     results.truncate(10);
     results
@@ -782,7 +855,7 @@ fn parse_brew_search_multiple(output: &str, package: &str) -> Vec<(String, Strin
 fn parse_choco_search_multiple(output: &str, package: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
     let package_lower = package.to_lowercase();
-    
+
     for line in output.lines() {
         if line.contains(' ') && !line.starts_with("Chocolatey") {
             if let Some(pkg_name) = line.split(' ').next() {
@@ -792,7 +865,7 @@ fn parse_choco_search_multiple(output: &str, package: &str) -> Vec<(String, Stri
             }
         }
     }
-    
+
     results.sort();
     results.truncate(10);
     results
@@ -801,7 +874,7 @@ fn parse_choco_search_multiple(output: &str, package: &str) -> Vec<(String, Stri
 fn parse_pacman_search_multiple(output: &str, package: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
     let package_lower = package.to_lowercase();
-    
+
     for line in output.lines() {
         if line.contains('/') {
             if let Some(pkg_part) = line.split(' ').next() {
@@ -813,7 +886,7 @@ fn parse_pacman_search_multiple(output: &str, package: &str) -> Vec<(String, Str
             }
         }
     }
-    
+
     results.sort();
     results.truncate(10);
     results
@@ -822,38 +895,47 @@ fn parse_pacman_search_multiple(output: &str, package: &str) -> Vec<(String, Str
 fn map_package_name(package: &str, manager: &str) -> String {
     // Built-in package name mapping
     let mappings = HashMap::from([
-        ("nodejs", HashMap::from([
-            ("apt", "nodejs"),
-            ("yum", "nodejs"),
-            ("dnf", "nodejs"),
-            ("brew", "node"),
-            ("choco", "nodejs"),
-            ("winget", "OpenJS.NodeJS"),
-        ])),
-        ("git", HashMap::from([
-            ("apt", "git"),
-            ("yum", "git"),
-            ("dnf", "git"),
-            ("brew", "git"),
-            ("choco", "git"),
-            ("winget", "Git.Git"),
-        ])),
-        ("python3", HashMap::from([
-            ("apt", "python3"),
-            ("yum", "python3"),
-            ("dnf", "python3"),
-            ("brew", "python@3.11"),
-            ("choco", "python3"),
-            ("winget", "Python.Python.3"),
-        ])),
+        (
+            "nodejs",
+            HashMap::from([
+                ("apt", "nodejs"),
+                ("yum", "nodejs"),
+                ("dnf", "nodejs"),
+                ("brew", "node"),
+                ("choco", "nodejs"),
+                ("winget", "OpenJS.NodeJS"),
+            ]),
+        ),
+        (
+            "git",
+            HashMap::from([
+                ("apt", "git"),
+                ("yum", "git"),
+                ("dnf", "git"),
+                ("brew", "git"),
+                ("choco", "git"),
+                ("winget", "Git.Git"),
+            ]),
+        ),
+        (
+            "python3",
+            HashMap::from([
+                ("apt", "python3"),
+                ("yum", "python3"),
+                ("dnf", "python3"),
+                ("brew", "python@3.11"),
+                ("choco", "python3"),
+                ("winget", "Python.Python.3"),
+            ]),
+        ),
     ]);
-    
+
     if let Some(pkg_map) = mappings.get(package) {
         if let Some(mapped) = pkg_map.get(manager) {
             return mapped.to_string();
         }
     }
-    
+
     package.to_string()
 }
 
@@ -862,13 +944,13 @@ fn download_file(url: &str, path: &str) -> Result<BuiltinValue, String> {
     // This is a simplified implementation
     // In a real implementation, you'd use a proper HTTP client like reqwest
     let curl_cmd = format!("curl -L '{}' -o '{}'", url, path);
-    
+
     let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &curl_cmd]).output()
+        Command::new("cmd").args(["/C", &curl_cmd]).output()
     } else {
-        Command::new("sh").args(&["-c", &curl_cmd]).output()
+        Command::new("sh").args(["-c", &curl_cmd]).output()
     };
-    
+
     match output {
         Ok(output) => {
             if output.status.success() {
@@ -884,66 +966,68 @@ fn download_file(url: &str, path: &str) -> Result<BuiltinValue, String> {
 
 // Environment Functions
 fn get_env_var(name: &str, default: Option<&str>) -> String {
-    std::env::var(name).unwrap_or_else(|_| {
-        default.unwrap_or("").to_string()
-    })
+    std::env::var(name).unwrap_or_else(|_| default.unwrap_or("").to_string())
 }
 
 // Package Project Management Functions
 fn package_init(name: &str) -> Result<BuiltinValue, String> {
     use std::env;
-    let current_dir = env::current_dir()
-        .map_err(|e| format!("Failed to get current directory: {}", e))?;
-    
+    let current_dir =
+        env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
+
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.init_project(name)?;
-    
+
     println!("✅ Initialized mage project: {}", name);
     println!("📁 Created project structure:");
     println!("   mage.toml        - Project manifest");
     println!("   scripts/         - Project scripts");
     println!("   .mage/           - Package cache");
-    
+
     Ok(BuiltinValue::Boolean(true))
 }
 
 fn package_add(package: &str, version: &str, is_dev: bool) -> Result<BuiltinValue, String> {
     use std::env;
-    let current_dir = env::current_dir()
-        .map_err(|e| format!("Failed to get current directory: {}", e))?;
-    
+    let current_dir =
+        env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
+
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.add_dependency(package, version, is_dev)?;
-    
-    let dep_type = if is_dev { "dev dependency" } else { "dependency" };
+
+    let dep_type = if is_dev {
+        "dev dependency"
+    } else {
+        "dependency"
+    };
     println!("✅ Added {} {} @ {}", dep_type, package, version);
-    
+
     Ok(BuiltinValue::Boolean(true))
 }
 
 fn package_remove(package: &str) -> Result<BuiltinValue, String> {
     use std::env;
-    let current_dir = env::current_dir()
-        .map_err(|e| format!("Failed to get current directory: {}", e))?;
-    
+    let current_dir =
+        env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
+
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.remove_dependency(package)?;
-    
+
     println!("✅ Removed dependency: {}", package);
-    
+
     Ok(BuiltinValue::Boolean(true))
 }
 
 fn package_install_deps(dev: bool) -> Result<BuiltinValue, String> {
     use std::env;
-    let current_dir = env::current_dir()
-        .map_err(|e| format!("Failed to get current directory: {}", e))?;
-    
+    let current_dir =
+        env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
+
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.install_dependencies(dev)?;
-    
+
     println!("✅ Dependencies installed successfully");
-    
+
     Ok(BuiltinValue::Boolean(true))
 }
 
@@ -953,26 +1037,26 @@ fn package_list() -> String {
         Ok(dir) => dir,
         Err(_) => return "❌ Failed to get current directory".to_string(),
     };
-    
+
     let resolver = crate::package::PackageResolver::new(&current_dir);
     match resolver.read_manifest() {
         Ok(manifest) => {
             let mut result = format!("📦 {} v{}\n", manifest.name, manifest.version);
-            
+
             if !manifest.dependencies.is_empty() {
                 result.push_str("\n🔗 Dependencies:\n");
                 for (name, dep) in &manifest.dependencies {
                     result.push_str(&format!("  {} @ {}\n", name, dep.version));
                 }
             }
-            
+
             if !manifest.dev_dependencies.is_empty() {
                 result.push_str("\n🛠️  Dev Dependencies:\n");
                 for (name, dep) in &manifest.dev_dependencies {
                     result.push_str(&format!("  {} @ {}\n", name, dep.version));
                 }
             }
-            
+
             result
         }
         Err(e) => format!("❌ Failed to read project manifest: {}", e),
@@ -982,6 +1066,9 @@ fn package_list() -> String {
 fn package_info(package: &str) -> Result<BuiltinValue, String> {
     // This would typically query a package registry
     // For now, provide basic package information
-    let info = format!("📦 Package: {}\n🔍 Status: Checking...\n💡 Use search_package() for repository search", package);
+    let info = format!(
+        "📦 Package: {}\n🔍 Status: Checking...\n💡 Use search_package() for repository search",
+        package
+    );
     Ok(BuiltinValue::String(info))
-} 
+}

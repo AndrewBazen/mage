@@ -1,18 +1,18 @@
 pub mod repl {
-    use std::collections::HashMap;
-    use crate::parser::MageParser;
-    use crate::interpreter::interpret;
-    use pest::Parser;
     use crate::Rule;
-    use rustyline::{error::ReadlineError, Editor};
-    use rustyline::config::Config;
+    use crate::interpreter::interpret;
+    use crate::parser::MageParser;
+    use crate::syntax;
+    use pest::Parser;
+    use rustyline::Helper;
     use rustyline::completion::{Completer, Pair};
+    use rustyline::config::Config;
     use rustyline::highlight::Highlighter;
     use rustyline::hint::Hinter;
     use rustyline::validate::Validator;
-    use rustyline::Helper;
+    use rustyline::{Editor, error::ReadlineError};
     use std::borrow::Cow;
-    use crate::syntax;
+    use std::collections::HashMap;
 
     struct MageCompleter {
         syntax_colors: syntax::TerminalColors,
@@ -22,7 +22,7 @@ pub mod repl {
     impl MageCompleter {
         fn new() -> Self {
             let tree_sitter_available = syntax::is_tree_sitter_available();
-            
+
             MageCompleter {
                 syntax_colors: syntax::TerminalColors::new(),
                 tree_sitter_available,
@@ -33,31 +33,27 @@ pub mod repl {
     impl Completer for MageCompleter {
         type Candidate = Pair;
 
-        fn complete(&self, line: &str, pos: usize, _ctx: &rustyline::Context<'_>) 
-            -> Result<(usize, Vec<Pair>), ReadlineError> {
+        fn complete(
+            &self,
+            line: &str,
+            pos: usize,
+            _ctx: &rustyline::Context<'_>,
+        ) -> Result<(usize, Vec<Pair>), ReadlineError> {
             let keywords = [
-                "conjure",
-                "incant",
-                "curse",
-                "evoke",
-                "if",
-                "loop",
-                "chant",
-                "cast",
-                "enchant",
-                "exit",
-                "quit",
-                "help",
-                "clear"
+                "conjure", "incant", "curse", "evoke", "if", "loop", "chant", "cast", "enchant",
+                "exit", "quit", "help", "clear",
             ];
-            let start = line[..pos].rfind(|c: char| c.is_whitespace()).map_or(0, |i| i + 1);
+            let start = line[..pos]
+                .rfind(|c: char| c.is_whitespace())
+                .map_or(0, |i| i + 1);
             let word = &line[start..pos];
-            let matches = keywords.iter()
+            let matches = keywords
+                .iter()
                 .filter(|&&k| k.starts_with(word))
                 .map(|kw| Pair {
                     display: kw.to_string(),
                     replacement: kw.to_string(),
-                })  
+                })
                 .collect();
             Ok((start, matches))
         }
@@ -71,31 +67,34 @@ pub mod repl {
                     // A very simple tree-sitter based highlighter
                     let mut result = String::new();
                     let colors = &self.syntax_colors;
-                    
+
                     // Function to process a node and add it to the result with highlighting
                     fn highlight_node(
                         node: &tree_sitter::Node,
-                        source: &str, 
-                        result: &mut String, 
-                        colors: &syntax::TerminalColors
+                        source: &str,
+                        result: &mut String,
+                        colors: &syntax::TerminalColors,
                     ) {
                         let node_text = &source[node.start_byte()..node.end_byte()];
-                        
+
                         // Apply colors based on node type
                         match node.kind() {
                             "variable_declaration" => {
                                 // Find the keyword and identifier
                                 if let Some(keyword) = node.child(0) {
                                     result.push_str(colors.get_color("keyword"));
-                                    result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                    result.push_str(
+                                        &source[keyword.start_byte()..keyword.end_byte()],
+                                    );
                                     result.push_str(syntax::TerminalColors::reset());
                                     result.push(' ');
-                                    
+
                                     if let Some(name) = node.child_by_field_name("name") {
                                         result.push_str(colors.get_color("variable.declaration"));
-                                        result.push_str(&source[name.start_byte()..name.end_byte()]);
+                                        result
+                                            .push_str(&source[name.start_byte()..name.end_byte()]);
                                         result.push_str(syntax::TerminalColors::reset());
-                                        
+
                                         // Add the rest of the node
                                         for i in 2..node.child_count() {
                                             if let Some(child) = node.child(i) {
@@ -109,57 +108,65 @@ pub mod repl {
                                         }
                                     }
                                 }
-                            },
+                            }
                             "string" => {
                                 result.push_str(colors.get_color("string"));
                                 result.push_str(node_text);
                                 result.push_str(syntax::TerminalColors::reset());
-                            },
+                            }
                             "number" => {
                                 result.push_str(colors.get_color("number"));
                                 result.push_str(node_text);
                                 result.push_str(syntax::TerminalColors::reset());
-                            },
+                            }
                             "comment" | "multiline_comment" => {
                                 result.push_str(colors.get_color("comment"));
                                 result.push_str(node_text);
                                 result.push_str(syntax::TerminalColors::reset());
-                            },
+                            }
                             "function_declaration" | "function_call" => {
                                 if let Some(keyword) = node.child(0) {
                                     result.push_str(colors.get_color("keyword"));
-                                    result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                    result.push_str(
+                                        &source[keyword.start_byte()..keyword.end_byte()],
+                                    );
                                     result.push_str(syntax::TerminalColors::reset());
                                     result.push(' ');
-                                    
+
                                     if let Some(name) = node.child_by_field_name("name") {
                                         result.push_str(colors.get_color("function"));
-                                        result.push_str(&source[name.start_byte()..name.end_byte()]);
+                                        result
+                                            .push_str(&source[name.start_byte()..name.end_byte()]);
                                         result.push_str(syntax::TerminalColors::reset());
                                     }
-                                    
+
                                     // Add the rest without colorization
                                     for i in 2..node.child_count() {
                                         if let Some(child) = node.child(i) {
-                                            if child.kind() == "string" || 
-                                               child.kind() == "number" || 
-                                               child.kind() == "comment" ||
-                                               child.kind() == "multiline_comment" {
+                                            if child.kind() == "string"
+                                                || child.kind() == "number"
+                                                || child.kind() == "comment"
+                                                || child.kind() == "multiline_comment"
+                                            {
                                                 highlight_node(&child, source, result, colors);
                                             } else {
-                                                result.push_str(&source[child.start_byte()..child.end_byte()]);
+                                                result.push_str(
+                                                    &source[child.start_byte()..child.end_byte()],
+                                                );
                                             }
                                         }
                                     }
                                 }
-                            },
+                            }
                             "output" | "error" | "command" => {
                                 if let Some(keyword) = node.child(0) {
                                     result.push_str(colors.get_color("keyword"));
-                                    result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                    result.push_str(
+                                        &source[keyword.start_byte()..keyword.end_byte()],
+                                    );
                                     result.push_str(syntax::TerminalColors::reset());
                                     result.push(' ');
-                                    
+
                                     // Add the rest with appropriate colors
                                     for i in 1..node.child_count() {
                                         if let Some(child) = node.child(i) {
@@ -167,27 +174,32 @@ pub mod repl {
                                         }
                                     }
                                 }
-                            },
+                            }
                             "if_statement" | "loop_statement" => {
                                 if let Some(keyword) = node.child(0) {
                                     result.push_str(colors.get_color("keyword"));
-                                    result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                    result.push_str(
+                                        &source[keyword.start_byte()..keyword.end_byte()],
+                                    );
                                     result.push_str(syntax::TerminalColors::reset());
-                                    
+
                                     // Add the rest with appropriate colors
                                     for i in 1..node.child_count() {
                                         if let Some(child) = node.child(i) {
-                                            if child.kind() == "string" || 
-                                               child.kind() == "number" || 
-                                               child.kind() == "comment" {
+                                            if child.kind() == "string"
+                                                || child.kind() == "number"
+                                                || child.kind() == "comment"
+                                            {
                                                 highlight_node(&child, source, result, colors);
                                             } else {
-                                                result.push_str(&source[child.start_byte()..child.end_byte()]);
+                                                result.push_str(
+                                                    &source[child.start_byte()..child.end_byte()],
+                                                );
                                             }
                                         }
                                     }
                                 }
-                            },
+                            }
                             _ => {
                                 // Process children for complex nodes
                                 if node.child_count() > 0 {
@@ -203,40 +215,29 @@ pub mod repl {
                             }
                         }
                     }
-                    
+
                     // Start from the root node
                     highlight_node(&tree.root_node(), line, &mut result, colors);
-                    
+
                     return Cow::Owned(result);
                 }
             }
-            
+
             // Fallback to basic keyword highlighting
             let keywords = [
-                "conjure",
-                "incant",
-                "curse",
-                "evoke",
-                "if",
-                "loop",
-                "chant",
-                "cast",
-                "enchant",
-                "exit",
-                "quit",
-                "help",
-                "clear"
+                "conjure", "incant", "curse", "evoke", "if", "loop", "chant", "cast", "enchant",
+                "exit", "quit", "help", "clear",
             ];
-            
+
             // Apply simple syntax highlighting with colors
             let colors = &self.syntax_colors;
             let mut out = String::new();
-            
+
             // Simple string detection
             let mut in_string = false;
             let mut in_comment = false;
             let mut buffer = String::new();
-            
+
             for (i, c) in line.chars().enumerate() {
                 if in_comment {
                     buffer.push(c);
@@ -259,8 +260,11 @@ pub mod repl {
                 } else if c == '"' {
                     // Found start of string
                     if !buffer.is_empty() {
-                        let word_ended = buffer.chars().last().is_none_or(|last| last.is_whitespace());
-                        
+                        let word_ended = buffer
+                            .chars()
+                            .last()
+                            .is_none_or(|last| last.is_whitespace());
+
                         if word_ended {
                             // Check for keyword at the end of the buffer
                             let last_word = buffer.split_whitespace().last().unwrap_or("");
@@ -278,7 +282,7 @@ pub mod repl {
                         }
                         buffer.clear();
                     }
-                    
+
                     buffer.push(c);
                     in_string = true;
                 } else if c == '#' {
@@ -304,7 +308,7 @@ pub mod repl {
                     buffer.push(c);
                 }
             }
-            
+
             // Handle any remaining buffer
             if !buffer.is_empty() {
                 if in_string {
@@ -323,7 +327,7 @@ pub mod repl {
                     out.push_str(&buffer);
                 }
             }
-            
+
             Cow::Owned(out)
         }
     }
@@ -331,14 +335,17 @@ pub mod repl {
     // Required empty implementations for Helper trait
     impl Hinter for MageCompleter {
         type Hint = String;
-        
+
         fn hint(&self, _line: &str, _pos: usize, _ctx: &rustyline::Context<'_>) -> Option<String> {
             None
         }
     }
 
     impl Validator for MageCompleter {
-        fn validate(&self, _ctx: &mut rustyline::validate::ValidationContext) -> rustyline::Result<rustyline::validate::ValidationResult> {
+        fn validate(
+            &self,
+            _ctx: &mut rustyline::validate::ValidationContext,
+        ) -> rustyline::Result<rustyline::validate::ValidationResult> {
             Ok(rustyline::validate::ValidationResult::Valid(None))
         }
     }
@@ -347,25 +354,23 @@ pub mod repl {
 
     pub fn run_repl(shell_override: Option<&str>) -> Result<(), String> {
         println!("🧙 Welcome to Mage REPL. Type 'exit' to quit.");
-        
+
         // Check if tree-sitter is available and inform the user
         if syntax::is_tree_sitter_available() {
             println!("🎨 Tree-sitter syntax highlighting enabled");
         } else {
             println!("📝 Using basic syntax highlighting");
         }
-        
+
         if let Some(shell) = shell_override {
             println!("🪄 Using shell: {}", shell);
         }
-        
+
         let mut scope = HashMap::new();
         let mut functions = HashMap::new();
-        
+
         // Setup rustyline with our MageCompleter
-        let config = Config::builder()
-            .auto_add_history(true)
-            .build();
+        let config = Config::builder().auto_add_history(true).build();
         let completer = MageCompleter::new();
         let mut rl = match Editor::with_config(config) {
             Ok(editor) => editor,
@@ -374,7 +379,7 @@ pub mod repl {
             }
         };
         rl.set_helper(Some(completer));
-        
+
         loop {
             match rl.readline("mage> ") {
                 Ok(line) => {
@@ -383,32 +388,34 @@ pub mod repl {
                         break;
                     }
                     if !trimmed.is_empty() {
-                        // Intentionally leak the string to make it 'static 
+                        // Intentionally leak the string to make it 'static
                         // This is a memory leak, but it's acceptable for a REPL
                         // where the program exits when the REPL ends
                         let input: &'static str = Box::leak(trimmed.to_string().into_boxed_str());
-                        
+
                         match MageParser::parse(Rule::program, input) {
-                            Ok(pairs) => interpret(pairs, shell_override, &mut scope, &mut functions),
+                            Ok(pairs) => {
+                                interpret(pairs, shell_override, &mut scope, &mut functions)
+                            }
                             Err(e) => eprintln!("Error: {}", e),
                         }
                     }
-                },
+                }
                 Err(ReadlineError::Interrupted) => {
                     println!("CTRL-C");
                     break;
-                },
+                }
                 Err(ReadlineError::Eof) => {
                     println!("CTRL-D");
                     break;
-                },
+                }
                 Err(err) => {
                     eprintln!("Error: {}", err);
                     break;
                 }
             }
         }
-        
+
         Ok(())
     }
-} 
+}

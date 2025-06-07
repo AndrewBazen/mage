@@ -1,20 +1,31 @@
-use tree_sitter::{Parser, Language, Tree};
-use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 use std::collections::HashMap;
-use std::sync::{Once, Mutex};
+use std::sync::{Mutex, Once};
+use tree_sitter::{Language, Parser, Tree};
+use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 
 // Highlight groups corresponding to queries
 static HIGHLIGHT_NAMES: &[&str] = &[
-    "keyword", "operator", "variable", "variable.declaration", "variable.parameter",
-    "function", "function.call", "string", "string.escape", "string.special",
-    "number", "constant.builtin", "comment", "comment.block", "punctuation.delimiter",
+    "keyword",
+    "operator",
+    "variable",
+    "variable.declaration",
+    "variable.parameter",
+    "function",
+    "function.call",
+    "string",
+    "string.escape",
+    "string.special",
+    "number",
+    "constant.builtin",
+    "comment",
+    "comment.block",
+    "punctuation.delimiter",
 ];
 
 // HTML colors for highlight groups
 static HTML_COLORS: &[&[u8]] = &[
-    b"#569CD6", b"#D4D4D4", b"#9CDCFE", b"#4EC9B0", b"#9CDCFE",
-    b"#DCDCAA", b"#DCDCAA", b"#CE9178", b"#D7BA7D", b"#569CD6",
-    b"#B5CEA8", b"#569CD6", b"#6A9955", b"#6A9955", b"#D4D4D4",
+    b"#569CD6", b"#D4D4D4", b"#9CDCFE", b"#4EC9B0", b"#9CDCFE", b"#DCDCAA", b"#DCDCAA", b"#CE9178",
+    b"#D7BA7D", b"#569CD6", b"#B5CEA8", b"#569CD6", b"#6A9955", b"#6A9955", b"#D4D4D4",
 ];
 
 // Singleton loader for tree-sitter language
@@ -34,13 +45,15 @@ pub fn language() -> Language {
         }
     });
     let guard = LANGUAGE.lock().unwrap();
-    guard.as_ref().expect("tree-sitter-mage not initialized").clone()
+    guard
+        .as_ref()
+        .expect("tree-sitter-mage not initialized")
+        .clone()
 }
 
 pub fn is_tree_sitter_available() -> bool {
-    LANGUAGE.lock().ok().is_some() || unsafe {
-        std::panic::catch_unwind(|| tree_sitter_mage()).is_ok()
-    }
+    LANGUAGE.lock().ok().is_some()
+        || unsafe { std::panic::catch_unwind(|| tree_sitter_mage()).is_ok() }
 }
 
 pub fn parse(source: &str) -> Option<Tree> {
@@ -77,7 +90,6 @@ pub fn get_ast_string(source: &str) -> String {
 pub struct TerminalColors {
     color_map: HashMap<&'static str, &'static str>,
 }
-
 
 impl TerminalColors {
     pub fn new() -> Self {

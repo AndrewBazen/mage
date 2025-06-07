@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageManifest {
@@ -28,10 +28,10 @@ pub struct PackageDependency {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PackageSource {
-    Registry(String),        // Official package manager
+    Registry(String), // Official package manager
     Git { url: String, rev: Option<String> },
-    Path(String),           // Local path
-    Url(String),            // Direct download
+    Path(String), // Local path
+    Url(String),  // Direct download
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,13 +98,13 @@ impl PackageResolver {
 
         self.write_manifest(&manifest)?;
         self.create_directory_structure()?;
-        
+
         Ok(())
     }
 
     pub fn add_dependency(&self, package: &str, version: &str, dev: bool) -> Result<(), String> {
         let mut manifest = self.read_manifest()?;
-        
+
         let dependency = PackageDependency {
             version: version.to_string(),
             source: PackageSource::Registry("auto".to_string()),
@@ -113,22 +113,26 @@ impl PackageResolver {
         };
 
         if dev {
-            manifest.dev_dependencies.insert(package.to_string(), dependency);
+            manifest
+                .dev_dependencies
+                .insert(package.to_string(), dependency);
         } else {
-            manifest.dependencies.insert(package.to_string(), dependency);
+            manifest
+                .dependencies
+                .insert(package.to_string(), dependency);
         }
 
         self.write_manifest(&manifest)?;
         self.resolve_dependencies()?;
-        
+
         Ok(())
     }
 
     pub fn remove_dependency(&self, package: &str) -> Result<(), String> {
         let mut manifest = self.read_manifest()?;
-        
-        let removed = manifest.dependencies.remove(package).is_some() ||
-                     manifest.dev_dependencies.remove(package).is_some();
+
+        let removed = manifest.dependencies.remove(package).is_some()
+            || manifest.dev_dependencies.remove(package).is_some();
 
         if !removed {
             return Err(format!("Package '{}' not found in dependencies", package));
@@ -136,7 +140,7 @@ impl PackageResolver {
 
         self.write_manifest(&manifest)?;
         self.resolve_dependencies()?;
-        
+
         Ok(())
     }
 
@@ -149,7 +153,7 @@ impl PackageResolver {
         for (name, dep) in &manifest.dependencies {
             resolution_queue.push((name.clone(), dep.clone(), false));
         }
-        
+
         for (name, dep) in &manifest.dev_dependencies {
             resolution_queue.push((name.clone(), dep.clone(), true));
         }
@@ -164,7 +168,7 @@ impl PackageResolver {
 
             // Skip platform-specific packages
             if let Some(platform) = &dep.platform {
-                if platform != &std::env::consts::OS {
+                if platform != std::env::consts::OS {
                     continue;
                 }
             }
@@ -222,11 +226,20 @@ impl PackageResolver {
         Ok(())
     }
 
-    fn install_package(&self, name: &str, dep: &PackageDependency, _lock: &Option<PackageLock>) -> Result<(), String> {
+    fn install_package(
+        &self,
+        name: &str,
+        dep: &PackageDependency,
+        _lock: &Option<PackageLock>,
+    ) -> Result<(), String> {
         // Check if package is platform-specific
         if let Some(platform) = &dep.platform {
             if platform != &std::env::consts::OS.to_string() {
-                println!("⏭️  Skipping {} (not for platform {})", name, std::env::consts::OS);
+                println!(
+                    "⏭️  Skipping {} (not for platform {})",
+                    name,
+                    std::env::consts::OS
+                );
                 return Ok(());
             }
         }
@@ -237,8 +250,9 @@ impl PackageResolver {
             PackageSource::Registry(manager) => {
                 if manager == "auto" {
                     // Use system package manager
-                    let _ = crate::builtins::call_builtin("install_package", vec![name.to_string()])
-                        .map_err(|e| format!("Failed to install {}: {}", name, e))?;
+                    let _ =
+                        crate::builtins::call_builtin("install_package", vec![name.to_string()])
+                            .map_err(|e| format!("Failed to install {}: {}", name, e))?;
                 } else {
                     // Use specific package manager
                     self.install_with_manager(name, manager)?;
@@ -262,7 +276,7 @@ impl PackageResolver {
     fn install_with_manager(&self, package: &str, manager: &str) -> Result<(), String> {
         // Use specific package manager
         use std::process::Command;
-        
+
         let install_cmd = match manager {
             "npm" => format!("npm install -g {}", package),
             "pip" => format!("pip install {}", package),
@@ -272,9 +286,9 @@ impl PackageResolver {
         };
 
         let output = if cfg!(target_os = "windows") {
-            Command::new("cmd").args(&["/C", &install_cmd]).output()
+            Command::new("cmd").args(["/C", &install_cmd]).output()
         } else {
-            Command::new("sh").args(&["-c", &install_cmd]).output()
+            Command::new("sh").args(["-c", &install_cmd]).output()
         };
 
         match output {
@@ -289,13 +303,13 @@ impl PackageResolver {
 
     fn install_from_git(&self, name: &str, url: &str, rev: Option<&str>) -> Result<(), String> {
         let package_dir = self.packages_dir.join(name);
-        
+
         // Clone or update repository
         if package_dir.exists() {
             // Update existing repo
             use std::process::Command;
             let output = Command::new("git")
-                .args(&["pull"])
+                .args(["pull"])
                 .current_dir(&package_dir)
                 .output()
                 .map_err(|e| format!("Failed to update git repo: {}", e))?;
@@ -378,8 +392,11 @@ impl PackageResolver {
 
         // Download and extract
         let download_path = package_dir.join("download");
-        let _ = crate::builtins::call_builtin("download", vec![url.to_string(), download_path.to_string_lossy().to_string()])
-            .map_err(|e| format!("Failed to download package: {}", e))?;
+        let _ = crate::builtins::call_builtin(
+            "download",
+            vec![url.to_string(), download_path.to_string_lossy().to_string()],
+        )
+        .map_err(|e| format!("Failed to download package: {}", e))?;
 
         // TODO: Handle different archive formats (zip, tar.gz, etc.)
         Ok(())
@@ -391,29 +408,36 @@ impl PackageResolver {
         // 2. Query package registry for available versions
         // 3. Find best matching version
         // 4. Handle conflicts between dependencies
-        
+
         // For now, just return the specified version
         Ok(dep.version.clone())
     }
 
-    fn calculate_checksum(&self, name: &str, version: &str, _source: &PackageSource) -> Result<String, String> {
+    fn calculate_checksum(
+        &self,
+        name: &str,
+        version: &str,
+        _source: &PackageSource,
+    ) -> Result<String, String> {
         // In a real implementation, you'd calculate actual checksums
         // For now, return a placeholder
-        Ok(format!("sha256:{:x}", md5::compute(format!("{}-{}", name, version))))
+        Ok(format!(
+            "sha256:{:x}",
+            md5::compute(format!("{}-{}", name, version))
+        ))
     }
 
     pub fn read_manifest(&self) -> Result<PackageManifest, String> {
         let content = fs::read_to_string(&self.manifest_path)
             .map_err(|e| format!("Failed to read manifest: {}", e))?;
-        
-        toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse manifest: {}", e))
+
+        toml::from_str(&content).map_err(|e| format!("Failed to parse manifest: {}", e))
     }
 
     fn write_manifest(&self, manifest: &PackageManifest) -> Result<(), String> {
         let content = toml::to_string_pretty(manifest)
             .map_err(|e| format!("Failed to serialize manifest: {}", e))?;
-        
+
         fs::write(&self.manifest_path, content)
             .map_err(|e| format!("Failed to write manifest: {}", e))
     }
@@ -421,27 +445,19 @@ impl PackageResolver {
     fn read_lock(&self) -> Result<PackageLock, String> {
         let content = fs::read_to_string(&self.lock_path)
             .map_err(|e| format!("Failed to read lock file: {}", e))?;
-        
-        toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse lock file: {}", e))
+
+        toml::from_str(&content).map_err(|e| format!("Failed to parse lock file: {}", e))
     }
 
     fn write_lock(&self, lock: &PackageLock) -> Result<(), String> {
         let content = toml::to_string_pretty(lock)
             .map_err(|e| format!("Failed to serialize lock file: {}", e))?;
-        
-        fs::write(&self.lock_path, content)
-            .map_err(|e| format!("Failed to write lock file: {}", e))
+
+        fs::write(&self.lock_path, content).map_err(|e| format!("Failed to write lock file: {}", e))
     }
 
     fn create_directory_structure(&self) -> Result<(), String> {
-        let dirs = [
-            ".mage",
-            ".mage/packages",
-            "scripts",
-            "lib",
-            "tests",
-        ];
+        let dirs = [".mage", ".mage/packages", "scripts", "lib", "tests"];
 
         for dir in &dirs {
             let dir_path = self.manifest_path.parent().unwrap().join(dir);
@@ -451,8 +467,14 @@ impl PackageResolver {
 
         // Create default scripts
         let script_contents = [
-            ("scripts/setup.mage", include_str!("../templates/setup.mage")),
-            ("scripts/build.mage", include_str!("../templates/build.mage")),
+            (
+                "scripts/setup.mage",
+                include_str!("../templates/setup.mage"),
+            ),
+            (
+                "scripts/build.mage",
+                include_str!("../templates/build.mage"),
+            ),
             ("scripts/test.mage", include_str!("../templates/test.mage")),
         ];
 
@@ -466,4 +488,4 @@ impl PackageResolver {
 
         Ok(())
     }
-} 
+}

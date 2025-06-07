@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::fs;
+use std::process::Command;
 
 #[test]
 fn test_hello_mage_script() {
@@ -26,4 +26,4 @@ incant \"Bye, ${name}!\"\n";
 
     // Clean up
     let _ = fs::remove_file(script_path);
-} 
+}
