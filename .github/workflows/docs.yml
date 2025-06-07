@@ -298,20 +298,32 @@ jobs:
               mkdir -p site/docs
           fi
 
-          # Verify site directory exists and has content
-          if [ -d site ] && [ "$(ls -A site)" ]; then
-              echo "✅ Documentation website created successfully"
-              echo "📋 Site contents:"
-              ls -la site/
-          else
-              echo "❌ Failed to create site directory"
-              exit 1
-          fi
+                     # Verify site directory exists and has content
+           if [ -d site ] && [ "$(ls -A site)" ]; then
+               echo "✅ Documentation website created successfully"
+               echo "📋 Site contents:"
+               ls -la site/
+               echo "📄 Verifying critical files:"
+               if [ -f site/index.html ]; then
+                   echo "✅ index.html exists ($(wc -c < site/index.html) bytes)"
+               else
+                   echo "❌ index.html missing!"
+                   exit 1
+               fi
+           else
+               echo "❌ Failed to create site directory"
+               exit 1
+           fi
 
       - name: Upload documentation artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
+          
+      - name: Verify artifact upload
+        run: |
+          echo "✅ Artifact upload completed"
+          echo "📦 Uploaded site directory contents to GitHub Pages artifact"
 
   deploy-docs:
     name: Deploy Documentation
@@ -325,7 +337,11 @@ jobs:
       - name: Wait for artifact availability
         run: |
           echo "⏳ Waiting for artifact to be fully uploaded..."
-          sleep 10
+          echo "🔍 Current runner environment:"
+          pwd
+          ls -la
+          echo "📦 Looking for artifacts from previous job..."
+          sleep 15
           echo "✅ Proceeding with deployment"
 
       - name: Deploy to GitHub Pages
