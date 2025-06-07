@@ -74,12 +74,8 @@ conjure test_content = "Hello from Mage! This is a test file."
 # Create a test file
 cast write_file(test_file, test_content)
 
-scry cast file_exists(test_file) {
+scry cast file_exists(test_file) == true {
     incant "✅ Test file created successfully!"
-    
-    # Read the file content
-    conjure content = cast read_file(test_file)
-    incant "📄 File content: $content"
     
     # Clean up
     cast remove_file(test_file)
@@ -99,7 +95,7 @@ incant "Available package managers: $pm_list"
 incant "Primary package manager: $primary_pm"
 
 # Check specific package managers
-scry cast package_manager_available("git") {
+scry cast package_manager_available("git") == true {
     incant "✅ Git is available as a package manager"
 } lest {
     incant "❌ Git is not available as a package manager"
@@ -109,17 +105,17 @@ incant ""
 # 7. Directory Operations
 incant "📂 7. Directory Operations"
 incant "-------------------------"
-conjure current_dir = cast get_current_directory()
+conjure current_dir = cast current_directory()
 incant "Current directory: $current_dir"
 
 conjure test_dir = "test_directory"
 cast ensure_directory(test_dir)
 
-scry cast directory_exists(test_dir) {
+scry cast directory_exists(test_dir) == true {
     incant "✅ Test directory created successfully!"
     
     # Clean up
-    cast delete_directory(test_dir)
+    cast remove_directory(test_dir)
     incant "🗑️  Test directory cleaned up"
 } lest {
     incant "❌ Failed to create test directory"
@@ -129,47 +125,34 @@ incant ""
 # 8. Environment Variables
 incant "🌍 8. Environment Variables"
 incant "--------------------------"
-conjure path_var = cast get_env("PATH")
+conjure path_var = cast env_var("PATH", "")
 scry path_var != "" {
     incant "✅ PATH environment variable found"
-    # Don't print the full PATH as it's usually very long
-    incant "   PATH length: ${#path_var} characters"
 } lest {
     incant "❌ PATH environment variable not found"
 }
 
-# Set and get a custom environment variable
-cast set_env("MAGE_TEST", "Hello World")
-conjure mage_test = cast get_env("MAGE_TEST")
-incant "Custom env var MAGE_TEST: $mage_test"
+conjure user_var = cast env_var("USER", "unknown")
+incant "Current user: " + user_var
 incant ""
 
 # 9. String Operations and Functions
 incant "🔤 9. String Operations"
 incant "----------------------"
 conjure greeting = "Hello, Magical World!"
-conjure lowercase = cast to_lowercase(greeting)
-conjure uppercase = cast to_uppercase(greeting)
-
-incant "Original: $greeting"
-incant "Lowercase: $lowercase"
-incant "Uppercase: $uppercase"
+incant "Original: " + greeting
 incant ""
 
-# 10. Mathematical Operations
+# 10. Mathematical Operations  
 incant "🔢 10. Mathematical Operations"
 incant "-----------------------------"
 conjure a = 10
 conjure b = 5
-conjure sum = cast add(a, b)
-conjure product = cast multiply(a, b)
-
-incant "$a + $b = $sum"
-incant "$a × $b = $product"
+incant "Basic arithmetic: " + a + " + " + b + " = " + (a + b)
 incant ""
 
 # 11. Interactive Features (skip in CI)
-conjure is_ci = cast get_env("CI")
+conjure is_ci = cast env_var("CI", "")
 scry is_ci == "" {
     incant "🎮 11. Interactive Features"
     incant "-------------------------"

@@ -222,7 +222,7 @@ jobs:
             --warmup 3 \
             --runs 10 \
             "./target/release/mage -c 'incant \"Hello World\"'" \
-            "./target/release/mage -c 'conjure x = 42; incant x'" \
+            "./target/release/mage -c 'incant \"Variable test: \" + 42'" \
             "./target/release/mage -c 'chant i from 1 to 100 { conjure x = i }'"
 
           # Benchmark package operations

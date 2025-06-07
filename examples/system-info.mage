@@ -18,7 +18,7 @@ incant "🏗️  Architecture: $arch"
 incant "\n"
 
 # Current directory and environment
-conjure current_dir = cast get_current_directory()
+conjure current_dir = cast current_directory()
 incant "📁 Current Directory: $current_dir"
 incant "\n"
 
@@ -66,13 +66,13 @@ incant "   Available: " + cast detect_package_managers()
 incant "   Primary: " + cast get_primary_package_manager()
 
 # Check specific package managers
-scry cast package_manager_available("brew") {
+scry cast package_manager_available("brew") == true {
     incant "✅ Homebrew is available"
 } lest {
     incant "❌ Homebrew not found"
 }
 
-scry cast package_manager_available("apt") {
+scry cast package_manager_available("apt") == true {
     incant "✅ APT is available"
 } lest {
     incant "❌ APT not found"
@@ -88,7 +88,7 @@ incant "Creating test directory: $test_dir"
 cast ensure_directory(test_dir)
 
 # Check if directory exists
-scry cast directory_exists(test_dir) {
+scry cast directory_exists(test_dir) == true {
     incant "✅ Test directory created successfully"
 } lest {
     incant "❌ Failed to create test directory"
@@ -100,7 +100,7 @@ incant "Creating test file: $test_file"
 cast write_file(test_file, "Hello from Mage!")
 
 # Check if file exists
-scry cast file_exists(test_file) {
+scry cast file_exists(test_file) == true {
     incant "✅ Test file created successfully"
 } lest {
     incant "❌ Test file was not created"
@@ -116,7 +116,7 @@ scry cast platform() != "windows" {
     incant "Making file executable..."
     cast make_executable(test_file)
     
-    scry cast is_executable(test_file) {
+    scry cast is_executable(test_file) == true {
         incant "✅ File is now executable"
     } lest {
         incant "❌ Failed to make file executable"
@@ -128,7 +128,7 @@ conjure link_path = "mage-test/test-link.txt"
 incant "Creating symlink: $link_path"
 cast symlink(test_file, link_path)
 
-scry cast file_exists(link_path) {
+scry cast file_exists(link_path) == true {
     incant "✅ Symlink created successfully"
 } lest {
     incant "❌ Failed to create symlink"

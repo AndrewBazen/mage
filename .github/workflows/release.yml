@@ -82,7 +82,7 @@ jobs:
             
             # Try new function call features
             mage -c 'incant "Platform: " + cast platform()'
-            mage -c 'conjure os_info = cast platform(); incant "Running on: " + os_info'
+            mage -c 'incant "Running on: " + cast platform()'
             
             # Run a script
             mage examples/system-info.mage

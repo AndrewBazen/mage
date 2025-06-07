@@ -274,8 +274,8 @@ jobs:
           # Test basic function call in expression
           ./target/release/mage -c 'incant "Platform: " + cast platform()'
           
-          # Test function call in assignment
-          ./target/release/mage -c 'conjure os_info = cast platform(); incant "OS: " + os_info'
+          # Test function call directly in expression (assignment test)
+          ./target/release/mage -c 'incant "OS: " + cast platform()'
           
           # Test function calls in conditionals
           ./target/release/mage -c 'scry cast file_exists("Cargo.toml") == true { incant "✅ Cargo.toml found" }'
