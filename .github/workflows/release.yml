@@ -13,22 +13,21 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Get version from tag
       id: get_version
       run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
     
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.get_version.outputs.version }}
-        release_name: Mage ${{ steps.get_version.outputs.version }}
-        body: |
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ steps.get_version.outputs.version }} \
+          --title "Mage ${{ steps.get_version.outputs.version }}" \
+          --notes "$(cat << 'EOF'
           # Mage ${{ steps.get_version.outputs.version }}
           
           🎉 **New Release of Mage Language**
@@ -92,8 +91,8 @@ jobs:
           ---
           
           **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${{ steps.get_version.outputs.version }}
-        draft: false
-        prerelease: false
+          EOF
+          )"
 
   build-release:
     name: Build Release
@@ -172,25 +171,14 @@ jobs:
         cd ../../../release-assets/
         Get-FileHash ${{ matrix.asset_name }}.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -FilePath ${{ matrix.asset_name }}.zip.sha256 -Encoding ascii
 
-    - name: Upload archive
-      uses: actions/upload-release-asset@v1
+    - name: Upload release assets
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip' || '.tar.gz' }}
-        asset_name: ${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip' || '.tar.gz' }}
-        asset_content_type: ${{ runner.os == 'Windows' && 'application/zip' || 'application/gzip' }}
-
-    - name: Upload checksum
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip.sha256' || '.tar.gz.sha256' }}
-        asset_name: ${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip.sha256' || '.tar.gz.sha256' }}
-        asset_content_type: text/plain
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release upload ${{ needs.create-release.outputs.version }} \
+          ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip' || '.tar.gz' }} \
+          ./release-assets/${{ matrix.asset_name }}${{ runner.os == 'Windows' && '.zip.sha256' || '.tar.gz.sha256' }} \
+          --clobber
 
   test-release-binaries:
     name: Test Release Binaries
@@ -334,11 +322,9 @@ jobs:
         chmod +x install.sh
     
     - name: Upload installation script
-      uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ./install.sh
-        asset_name: install.sh
-        asset_content_type: text/plain 
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release upload ${{ needs.create-release.outputs.version }} \
+          ./install.sh \
+          --clobber 

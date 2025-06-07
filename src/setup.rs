@@ -42,53 +42,77 @@ pub fn setup_with_dry_run(dry_run: bool) -> io::Result<()> {
     );
     log("Mage setup started...", dry_run)?;
 
-    if Command::new("tree-sitter")
+    let tree_sitter_available = Command::new("tree-sitter")
         .arg("--version")
         .output()
-        .is_err()
-    {
+        .is_ok();
+    
+    if tree_sitter_available {
+        log("✅ tree-sitter CLI is available", dry_run)?;
+    } else {
         let msg = "❌ tree-sitter CLI is not installed.";
-        eprintln!("{}", msg);
-        log(msg, dry_run)?;
-        return Ok(());
-    }
-    log("✅ tree-sitter CLI is available", dry_run)?;
-
-    let config_path = home_dir()
-        .expect("Could not determine home directory")
-        .join(".tree-sitter/config.json");
-
-    if !config_path.exists() {
-        println!("📦 Initializing tree-sitter config...");
-        log("📦 Running tree-sitter init-config", dry_run)?;
-        if !dry_run {
-            Command::new("tree-sitter").arg("init-config").status()?;
+        if dry_run {
+            println!("[dry-run] {}", msg);
+            log("⚠️ tree-sitter CLI missing (continuing in dry-run mode)", dry_run)?;
+        } else {
+            eprintln!("{}", msg);
+            log(msg, dry_run)?;
+            return Ok(());
         }
     }
 
-    let grammar_path = std::env::current_dir()?.join("tree-sitter-mage");
-    let config_json = fs::read_to_string(&config_path)?;
-    let mut config: Value = serde_json::from_str(&config_json)?;
+    if tree_sitter_available {
+        let config_path = home_dir()
+            .expect("Could not determine home directory")
+            .join(".tree-sitter/config.json");
 
-    let dirs = config
-        .get_mut("parser-directories")
-        .and_then(|v| v.as_array_mut())
-        .ok_or_else(|| io::Error::other("Invalid config.json format"))?;
+        if !config_path.exists() {
+            println!("📦 Initializing tree-sitter config...");
+            log("📦 Running tree-sitter init-config", dry_run)?;
+            if !dry_run {
+                Command::new("tree-sitter").arg("init-config").status()?;
+            }
+        }
 
-    let grammar_str = grammar_path.to_string_lossy().to_string();
-    if !dirs.iter().any(|v| v.as_str() == Some(&grammar_str)) {
-        dirs.push(Value::String(grammar_str.clone()));
-        println!("✨ Added {} to parser-directories", grammar_str);
-        log(
-            &format!("✨ Added {} to parser-directories", grammar_str),
-            dry_run,
-        )?;
+        if config_path.exists() || dry_run {
+            let grammar_path = std::env::current_dir()?.join("tree-sitter-mage");
+            
+            if config_path.exists() {
+                let config_json = fs::read_to_string(&config_path)?;
+                let mut config: Value = serde_json::from_str(&config_json)?;
+
+                let dirs = config
+                    .get_mut("parser-directories")
+                    .and_then(|v| v.as_array_mut())
+                    .ok_or_else(|| io::Error::other("Invalid config.json format"))?;
+
+                let grammar_str = grammar_path.to_string_lossy().to_string();
+                if !dirs.iter().any(|v| v.as_str() == Some(&grammar_str)) {
+                    dirs.push(Value::String(grammar_str.clone()));
+                    println!("✨ Added {} to parser-directories", grammar_str);
+                    log(
+                        &format!("✨ Added {} to parser-directories", grammar_str),
+                        dry_run,
+                    )?;
+                }
+
+                if !dry_run {
+                    fs::write(&config_path, serde_json::to_string_pretty(&config)?)?;
+                }
+            } else if dry_run {
+                let grammar_str = grammar_path.to_string_lossy().to_string();
+                println!("[dry-run] Would add {} to parser-directories", grammar_str);
+                log(
+                    &format!("[dry-run] Would add {} to parser-directories", grammar_str),
+                    dry_run,
+                )?;
+            }
+            
+            log("✅ Tree-sitter config updated", dry_run)?;
+        }
+    } else {
+        log("⚠️ Skipping tree-sitter configuration (CLI not available)", dry_run)?;
     }
-
-    if !dry_run {
-        fs::write(&config_path, serde_json::to_string_pretty(&config)?)?;
-    }
-    log("✅ Tree-sitter config updated", dry_run)?;
 
     let ftdetect_path = home_dir().unwrap().join(".config/nvim/ftdetect/mage.vim");
     if !ftdetect_path.exists() {
