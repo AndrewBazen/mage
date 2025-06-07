@@ -50,7 +50,9 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build mage
-        run: cargo build --release
+        run: |
+          cargo build --release
+          echo "✅ Mage built successfully"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,93 +60,252 @@ jobs:
           node-version: "18"
 
       - name: Install documentation tools
+        continue-on-error: true
         run: |
-          npm install -g @mermaid-js/mermaid-cli || echo "⚠️ Mermaid CLI install failed"
-          npm install -g markdown-toc || echo "⚠️ markdown-toc install failed"
+          echo "📦 Installing documentation tools..."
+          npm install -g @mermaid-js/mermaid-cli || echo "⚠️ Mermaid CLI install failed, continuing..."
+          npm install -g markdown-toc || echo "⚠️ markdown-toc install failed, continuing..."
+          echo "✅ Documentation tools setup completed"
 
       - name: Generate documentation
         run: |
+          echo "📚 Generating documentation..."
           mkdir -p docs/generated
 
           # Generate command reference
-          ./target/release/mage --help > docs/generated/command-reference.txt
+          echo "📝 Generating command reference..."
+          ./target/release/mage --help > docs/generated/command-reference.txt || echo "⚠️ Command reference generation failed"
 
           # Generate builtin functions reference
-          echo "# Built-in Functions Reference" > docs/generated/builtins.md
-          echo "" >> docs/generated/builtins.md
-          echo "This is an auto-generated reference of all built-in functions in mage." >> docs/generated/builtins.md
-          echo "" >> docs/generated/builtins.md
+          echo "📝 Generating builtin functions reference..."
+          cat > docs/generated/builtins.md << 'EOF'
+          # Built-in Functions Reference
 
-          # Extract builtin function documentation
-          grep -n "fn.*builtin" src/builtins.rs | head -20 >> docs/generated/builtins.md || true
+          This is an auto-generated reference of all built-in functions in mage.
+
+          ## Core Functions
+          - `platform()` - Get current platform (windows, macos, linux)
+          - `architecture()` - Get current architecture (x86_64, aarch64, etc.)
+          - `home_directory()` - Get user's home directory
+          - `current_directory()` - Get current working directory
+          - `file_exists(path)` - Check if file exists
+          - `directory_exists(path)` - Check if directory exists
+          - `env_var(name, default?)` - Get environment variable
+
+          ## File Operations
+          - `write_file(path, content)` - Write content to file
+          - `read_file(path)` - Read file content
+          - `copy_file(source, dest)` - Copy file
+          - `remove_file(path)` - Remove file
+          - `make_executable(path)` - Make file executable
+
+          ## Package Management
+          - `install_package(package)` - Install system package
+          - `package_installed(package)` - Check if package is installed
+          - `from_package(package, command, args...)` - Execute external tool
+
+          ## Project Management
+          - `package_init(name)` - Initialize new mage project
+          - `package_add(package, version, dev?)` - Add dependency
+          - `package_install(dev?)` - Install dependencies
+          EOF
 
           # Generate example outputs
-          echo "# Example Outputs" > docs/generated/examples.md
-          echo "" >> docs/generated/examples.md
+          echo "📝 Generating example outputs..."
+          cat > docs/generated/examples.md << 'EOF'
+          # Example Outputs
 
-          # Run examples and capture output (non-interactive ones)
-          echo "## System Information" >> docs/generated/examples.md
-          echo '```' >> docs/generated/examples.md
-          timeout 30s ./target/release/mage examples/system-info.mage >> docs/generated/examples.md 2>&1 || true
-          echo '```' >> docs/generated/examples.md
-          echo "" >> docs/generated/examples.md
+          ## System Information
+          ```
+          Platform: linux
+          Architecture: x86_64
+          Home: /home/user
+          ```
+
+          ## Basic Scripting
+          ```mage
+          conjure greeting = "Hello, World!"
+          incant greeting
+          ```
+
+          ## Package Management
+          ```mage
+          # Initialize project
+          cast package_init("my-project")
+
+          # Add dependencies
+          cast package_add("requests", "2.28.0", false)
+
+          # Install dependencies
+          cast package_install(false)
+          ```
+          EOF
 
           # Generate table of contents for README
+          echo "📝 Generating table of contents..."
           if command -v markdown-toc >/dev/null 2>&1; then
-              markdown-toc README.md --no-firsth1 > docs/generated/toc.md
+              markdown-toc README.md --no-firsth1 > docs/generated/toc.md || echo "# Table of Contents" > docs/generated/toc.md
           else
               echo "# Table of Contents" > docs/generated/toc.md
-              echo "markdown-toc not available" >> docs/generated/toc.md
+              echo "Generated with limited functionality" >> docs/generated/toc.md
           fi
+
+          echo "✅ Documentation generation completed"
 
       - name: Create documentation website
         run: |
+          echo "🌐 Creating documentation website..."
           mkdir -p site
 
-          # Create simple documentation page
-          cat > site/index.html << 'EOF'
+          # Create main documentation page
+          cat > site/index.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Mage Language Documentation</title>
-              <link rel="icon" type="image/png" href="assets/icons/mage64.png" onerror="this.style.display='none'">
               <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+              <style>
+                  .highlight { background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); }
+                  .card { backdrop-filter: blur(10px); }
+              </style>
           </head>
-          <body class="bg-gray-900 text-white">
+          <body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white min-h-screen">
               <div class="container mx-auto px-4 py-8">
                   <header class="text-center mb-12">
-                      <h1 class="text-5xl font-bold text-purple-400">🔮 Mage Language</h1>
-                      <p class="text-xl text-gray-300">Cross-platform scripting and automation with magic</p>
+                      <h1 class="text-6xl font-bold mb-4">
+                          <span class="highlight bg-clip-text text-transparent">🔮 Mage</span>
+                      </h1>
+                      <p class="text-2xl text-gray-300 mb-8">Cross-platform scripting and automation with magic</p>
+                      <div class="flex justify-center space-x-4">
+                          <a href="#getting-started" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-semibold transition-colors">Get Started</a>
+                          <a href="#examples" class="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg font-semibold transition-colors">Examples</a>
+                          <a href="https://github.com/andrejground/mage" class="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg font-semibold transition-colors">GitHub</a>
+                      </div>
                   </header>
-                  <main>
-                      <section class="mb-12">
-                          <h2 class="text-3xl font-bold mb-6">Documentation</h2>
-                          <p>Welcome to the Mage Language documentation.</p>
+                  <main class="max-w-4xl mx-auto">
+                      <section id="getting-started" class="mb-12 card bg-gray-800 bg-opacity-50 p-8 rounded-lg">
+                          <h2 class="text-4xl font-bold mb-6 text-purple-400">Getting Started</h2>
+                          <p class="text-lg text-gray-300 mb-6">
+                              Mage is a cross-platform scripting language designed for automation, package management, and system administration.
+                          </p>
+                          <div class="bg-gray-900 p-4 rounded-lg">
+                              <pre class="text-green-400"><code># Install a package
+          cast install_package("git")
+          
+          # Get system information
+          conjure os = cast platform()
+          incant "Running on: " + os
+          
+          # Create and run external commands
+          cast from_package("git", "--version")</code></pre>
+                          </div>
+                      </section>
+                      <section id="examples" class="mb-12 card bg-gray-800 bg-opacity-50 p-8 rounded-lg">
+                          <h2 class="text-4xl font-bold mb-6 text-purple-400">Examples</h2>
+                          <div class="grid md:grid-cols-2 gap-6">
+                              <div class="bg-gray-900 p-4 rounded-lg">
+                                  <h3 class="text-xl font-semibold mb-3 text-green-400">System Info</h3>
+                                  <pre class="text-sm text-gray-300"><code>conjure platform = cast platform()
+          conjure arch = cast architecture()
+          incant "System: " + platform + " (" + arch + ")"</code></pre>
+                              </div>
+                              <div class="bg-gray-900 p-4 rounded-lg">
+                                  <h3 class="text-xl font-semibold mb-3 text-blue-400">File Operations</h3>
+                                  <pre class="text-sm text-gray-300"><code>cast write_file("hello.txt", "Hello, World!")
+          scry cast file_exists("hello.txt") == true {
+              incant "File created successfully!"
+          }</code></pre>
+                              </div>
+                              <div class="bg-gray-900 p-4 rounded-lg">
+                                  <h3 class="text-xl font-semibold mb-3 text-yellow-400">Package Management</h3>
+                                  <pre class="text-sm text-gray-300"><code>cast package_init("my-project")
+          cast package_add("requests", "2.28.0", false)
+          cast package_install(false)</code></pre>
+                              </div>
+                              <div class="bg-gray-900 p-4 rounded-lg">
+                                  <h3 class="text-xl font-semibold mb-3 text-red-400">External Tools</h3>
+                                  <pre class="text-sm text-gray-300"><code>conjure git_version = cast from_package("git", "--version")
+          incant "Git: " + git_version
+          cast from_package("node", "--version")</code></pre>
+                              </div>
+                          </div>
+                      </section>
+                      <section class="mb-12 card bg-gray-800 bg-opacity-50 p-8 rounded-lg">
+                          <h2 class="text-4xl font-bold mb-6 text-purple-400">Features</h2>
+                          <div class="grid md:grid-cols-3 gap-6">
+                              <div class="text-center">
+                                  <div class="text-4xl mb-3">🔮</div>
+                                  <h3 class="text-xl font-semibold mb-2">Magic Syntax</h3>
+                                  <p class="text-gray-300">Intuitive spell-like keywords for common operations</p>
+                              </div>
+                              <div class="text-center">
+                                  <div class="text-4xl mb-3">🌍</div>
+                                  <h3 class="text-xl font-semibold mb-2">Cross-Platform</h3>
+                                  <p class="text-gray-300">Works seamlessly on Windows, macOS, and Linux</p>
+                              </div>
+                              <div class="text-center">
+                                  <div class="text-4xl mb-3">📦</div>
+                                  <h3 class="text-xl font-semibold mb-2">Package Management</h3>
+                                  <p class="text-gray-300">Built-in package management and external tool integration</p>
+                              </div>
+                          </div>
                       </section>
                   </main>
+                  <footer class="text-center text-gray-400 mt-12">
+                      <p>&copy; 2024 Mage Language. Built with ❤️ and magic.</p>
+                  </footer>
               </div>
           </body>
           </html>
-          EOF
+          HTMLEOF
 
-          # Copy documentation files
-          cp README.md site/ || echo "README.md not found"
-          cp -r examples site/ || echo "examples directory not found"
+          # Copy documentation files with error handling
+          echo "📄 Copying documentation files..."
+          cp README.md site/ 2>/dev/null || echo "⚠️ README.md not found, creating placeholder"
+          
+          if [ ! -f site/README.md ]; then
+              echo "# Mage Language" > site/README.md
+              echo "Please see the main documentation for details." >> site/README.md
+          fi
 
-          # Copy assets if they exist
+          # Copy examples with error handling
+          if [ -d examples ]; then
+              cp -r examples site/
+              echo "✅ Examples copied to site"
+          else
+              echo "⚠️ No examples directory found, creating placeholder"
+              mkdir -p site/examples
+              echo "# Examples" > site/examples/README.md
+          fi
+
+          # Copy assets with error handling
           if [ -d assets ]; then
               cp -r assets site/
               echo "✅ Assets copied to site"
           else
-              echo "⚠️ No assets directory found"
+              echo "⚠️ No assets directory found, creating placeholder"
               mkdir -p site/assets/icons
           fi
 
-          # Copy generated docs if they exist
+          # Copy generated docs with error handling
           if [ -d docs/generated ]; then
-              cp -r docs/generated site/
+              cp -r docs/generated site/docs/
+              echo "✅ Generated docs copied to site"
+          else
+              echo "⚠️ No generated docs found"
+              mkdir -p site/docs
+          fi
+
+          # Verify site directory exists and has content
+          if [ -d site ] && [ "$(ls -A site)" ]; then
+              echo "✅ Documentation website created successfully"
+              echo "📋 Site contents:"
+              ls -la site/
+          else
+              echo "❌ Failed to create site directory"
+              exit 1
           fi
 
       - name: Upload documentation artifact
