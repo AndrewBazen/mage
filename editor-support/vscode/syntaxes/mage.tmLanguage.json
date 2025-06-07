@@ -1,0 +1,174 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Mage",
+  "scopeName": "source.mage",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#variables"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#brackets"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.mage",
+          "begin": "##",
+          "end": "##",
+          "patterns": [
+            {
+              "name": "comment.line.number-sign.mage",
+              "match": "^\\s*#.*$"
+            }
+          ]
+        },
+        {
+          "name": "comment.line.number-sign.mage",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.mage",
+          "match": "\\b(scry|morph|lest|loop|chant|from|to|step|channel)\\b"
+        },
+        {
+          "name": "keyword.other.mage",
+          "match": "\\b(conjure|incant|curse|evoke|enchant|cast|recite)\\b"
+        },
+        {
+          "name": "keyword.operator.comparison.mage",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.mage",
+          "match": "(\\+|\\-|\\*|\\/|%)"
+        },
+        {
+          "name": "keyword.operator.assignment.mage",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.logical.mage",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "constant.language.boolean.mage",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mage",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mage",
+              "match": "\\\\."
+            },
+            {
+              "name": "variable.other.interpolation.mage",
+              "match": "\\$\\{[^}]+\\}"
+            },
+            {
+              "name": "variable.other.interpolation.simple.mage",
+              "match": "\\$[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.mage",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mage",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.mage",
+          "match": "\\b-?[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.mage",
+          "match": "\\b-?[0-9]+\\b"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.declaration.mage",
+          "match": "(?<=conjure\\s)[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "name": "variable.other.mage",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.definition.mage",
+          "match": "(?<=enchant\\s)[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "name": "entity.name.function.call.mage",
+          "match": "(?<=cast\\s)[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "name": "entity.name.function.mage",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.mage",
+          "match": "[+\\-*/%=<>!]+"
+        }
+      ]
+    },
+    "brackets": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.brackets.mage",
+          "match": "[{}\\[\\]()]"
+        }
+      ]
+    }
+  }
+} 

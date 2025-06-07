@@ -1,0 +1,159 @@
+{
+  "Variable Declaration": {
+    "prefix": "conjure",
+    "body": [
+      "conjure ${1:variable_name} = ${2:value}"
+    ],
+    "description": "Create a new variable"
+  },
+  "Output": {
+    "prefix": "incant",
+    "body": [
+      "incant \"${1:message}\""
+    ],
+    "description": "Output a message"
+  },
+  "Error": {
+    "prefix": "curse",
+    "body": [
+      "curse \"${1:error_message}\""
+    ],
+    "description": "Output an error and exit"
+  },
+  "Shell Command": {
+    "prefix": "evoke",
+    "body": [
+      "evoke \"${1:command}\""
+    ],
+    "description": "Execute a shell command"
+  },
+  "Function Definition": {
+    "prefix": "enchant",
+    "body": [
+      "enchant ${1:function_name}(${2:parameters}) {",
+      "\t${3:// function body}",
+      "}"
+    ],
+    "description": "Define a function"
+  },
+  "Function Call": {
+    "prefix": "cast",
+    "body": [
+      "cast ${1:function_name}(${2:arguments})"
+    ],
+    "description": "Call a function"
+  },
+  "Scry Statement": {
+    "prefix": "scry",
+    "body": [
+      "scry ${1:condition} {",
+      "\t${2:// scry body}",
+      "}"
+    ],
+    "description": "Scry statement (magical if)"
+  },
+  "Scry-Lest Statement": {
+    "prefix": "scrylest",
+    "body": [
+      "scry ${1:condition} {",
+      "\t${2:// scry body}",
+      "} lest {",
+      "\t${3:// lest body}",
+      "}"
+    ],
+    "description": "Scry-lest statement (magical if-else)"
+  },
+  "Scry-Morph-Lest Statement": {
+    "prefix": "scrymorph",
+    "body": [
+      "scry ${1:condition} {",
+      "\t${2:// scry body}",
+      "} morph ${3:other_condition} {",
+      "\t${4:// morph body}",
+      "} lest {",
+      "\t${5:// lest body}",
+      "}"
+    ],
+    "description": "Scry-morph-lest statement (magical if-else if-else)"
+  },
+  "Loop": {
+    "prefix": "loop",
+    "body": [
+      "loop {",
+      "\t${1:// loop body}",
+      "}"
+    ],
+    "description": "Basic loop (3 iterations)"
+  },
+  "For Loop": {
+    "prefix": "chant",
+    "body": [
+      "chant ${1:variable} from ${2:start} to ${3:end} {",
+      "\t${4:// loop body}",
+      "}"
+    ],
+    "description": "For loop with chant"
+  },
+  "For Loop with Step": {
+    "prefix": "chantstep",
+    "body": [
+      "chant ${1:variable} from ${2:start} to ${3:end} step ${4:step} {",
+      "\t${5:// loop body}",
+      "}"
+    ],
+    "description": "For loop with custom step"
+  },
+  "Comment Block": {
+    "prefix": "comment",
+    "body": [
+      "##",
+      "# ${1:description}",
+      "# ${2:additional info}",
+      "##"
+    ],
+    "description": "Multi-line comment block"
+  },
+  "String Interpolation": {
+    "prefix": "interpolate",
+    "body": [
+      "\"${1:text} $${2:variable} ${3:more text}\""
+    ],
+    "description": "String with variable interpolation"
+  },
+  "Script Header": {
+    "prefix": "header",
+    "body": [
+      "#!/usr/bin/env mage",
+      "# ${1:Script description}",
+      "",
+      "conjure ${2:script_name} = \"${3:My Mage Script}\"",
+      "incant \"🧙‍♂️ Starting $${2:script_name}...\"",
+      "",
+      "${4:// Your script content here}",
+      "",
+      "incant \"✅ $${2:script_name} complete!\""
+    ],
+    "description": "Standard mage script header"
+  },
+  "Dotfiles Setup Function": {
+    "prefix": "dotfiles",
+    "body": [
+      "enchant setup_${1:component}() {",
+      "\tincant \"⚙️ Setting up ${1:component}...\"",
+      "\t",
+      "\t${2:// Setup commands here}",
+      "\tevoke \"${3:shell_command}\"",
+      "\t",
+      "\tincant \"✅ ${1:component} setup complete!\"",
+      "}"
+    ],
+    "description": "Dotfiles setup function template"
+  },
+  "Cross-Platform Command": {
+    "prefix": "crossplatform",
+    "body": [
+      "evoke \"${1:unix_command} 2>/dev/null || ${2:windows_command} 2>nul\""
+    ],
+    "description": "Cross-platform shell command"
+  }
+} 
