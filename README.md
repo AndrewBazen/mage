@@ -16,7 +16,7 @@ Mage is a powerful, cross-platform scripting language designed to make automatio
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/mage.git
+git clone https://github.com/AndrewBazen/mage.git
 cd mage
 cargo build --release
 ```
