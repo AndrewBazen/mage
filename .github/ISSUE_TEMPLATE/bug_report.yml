@@ -93,7 +93,7 @@ body:
       render: bash
       placeholder: |
         #!/usr/bin/env mage
-        
+
         incant "Example script that causes the bug"
         # ... rest of your script
 
@@ -124,4 +124,4 @@ body:
       description: By submitting this issue, you agree to follow our Code of Conduct
       options:
         - label: I agree to follow this project's Code of Conduct
-          required: true 
+          required: true

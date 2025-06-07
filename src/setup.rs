@@ -46,37 +46,31 @@ pub fn setup_with_dry_run(dry_run: bool) -> io::Result<()> {
         .arg("--version")
         .output()
         .is_ok();
-    
+
     if tree_sitter_available {
         log("✅ tree-sitter CLI is available", dry_run)?;
     } else {
         let msg = "❌ tree-sitter CLI is not installed.";
         if dry_run {
             println!("[dry-run] {}", msg);
-            log("⚠️ tree-sitter CLI missing (continuing in dry-run mode)", dry_run)?;
+            log(
+                "⚠️ tree-sitter CLI missing (continuing in dry-run mode)",
+                dry_run,
+            )?;
         } else {
             eprintln!("{}", msg);
             log(msg, dry_run)?;
-            return Ok(());
         }
     }
 
     if tree_sitter_available {
         let config_path = home_dir()
-            .expect("Could not determine home directory")
-            .join(".tree-sitter/config.json");
-
-        if !config_path.exists() {
-            println!("📦 Initializing tree-sitter config...");
-            log("📦 Running tree-sitter init-config", dry_run)?;
-            if !dry_run {
-                Command::new("tree-sitter").arg("init-config").status()?;
-            }
-        }
+            .unwrap()
+            .join(".config/nvim/after/queries/mage/highlights.scm");
 
         if config_path.exists() || dry_run {
             let grammar_path = std::env::current_dir()?.join("tree-sitter-mage");
-            
+
             if config_path.exists() {
                 let config_json = fs::read_to_string(&config_path)?;
                 let mut config: Value = serde_json::from_str(&config_json)?;
@@ -107,11 +101,14 @@ pub fn setup_with_dry_run(dry_run: bool) -> io::Result<()> {
                     dry_run,
                 )?;
             }
-            
+
             log("✅ Tree-sitter config updated", dry_run)?;
         }
     } else {
-        log("⚠️ Skipping tree-sitter configuration (CLI not available)", dry_run)?;
+        log(
+            "⚠️ Skipping tree-sitter configuration (CLI not available)",
+            dry_run,
+        )?;
     }
 
     let ftdetect_path = home_dir().unwrap().join(".config/nvim/ftdetect/mage.vim");
