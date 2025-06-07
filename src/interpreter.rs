@@ -672,7 +672,7 @@ fn evaluate_builtin_function_call(
                     builtins::BuiltinValue::Number(n) => ExprValue::Number(n),
                     builtins::BuiltinValue::Boolean(b) => ExprValue::Boolean(b),
                     builtins::BuiltinValue::Array(l) => {
-                        ExprValue::List(l.into_iter().map(|s| ExprValue::String(s)).collect())
+                        ExprValue::List(l.into_iter().map(ExprValue::String).collect())
                     }
                 }
             }

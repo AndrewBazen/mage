@@ -1108,7 +1108,7 @@ fn from_package(package: &str, command: &str, args: &[String]) -> Result<Builtin
 
 fn find_package_executable(package: &str) -> Result<String, String> {
     // Check if the package is already in PATH
-    if let Ok(_) = Command::new(package).arg("--version").output() {
+    if Command::new(package).arg("--version").output().is_ok() {
         return Ok(package.to_string());
     }
 
