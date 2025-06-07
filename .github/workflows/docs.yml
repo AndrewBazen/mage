@@ -315,15 +315,35 @@ jobs:
                exit 1
            fi
 
+      - name: Pre-upload verification
+        run: |
+          echo "🔍 Pre-upload verification:"
+          echo "📂 Current directory: $(pwd)"
+          echo "📂 Site directory check:"
+          if [ -d "./site" ]; then
+              echo "✅ ./site directory exists"
+              echo "📋 Site directory size: $(du -sh ./site)"
+              echo "📄 Site contents:"
+              find ./site -type f -exec ls -lh {} \; | head -20
+          else
+              echo "❌ ./site directory missing!"
+              exit 1
+          fi
+
       - name: Upload documentation artifact
+        id: upload
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
           
       - name: Verify artifact upload
         run: |
-          echo "✅ Artifact upload completed"
-          echo "📦 Uploaded site directory contents to GitHub Pages artifact"
+          echo "✅ Artifact upload step completed"
+          echo "📦 Attempted to upload ./site directory to GitHub Pages artifact"
+          echo "🔍 Upload step outputs:"
+          echo "   - artifact-id: ${{ steps.upload.outputs.artifact-id || 'not available' }}"
+          echo "   - artifact-url: ${{ steps.upload.outputs.artifact-url || 'not available' }}"
+          echo "🔍 Note: Artifact availability will be verified in deployment job"
 
   deploy-docs:
     name: Deploy Documentation
