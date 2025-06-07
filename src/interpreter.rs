@@ -627,7 +627,7 @@ fn evaluate_builtin_function_call(
     let name = inner.next().unwrap().as_str();
     let args_pair = inner.next();
     let mut args: Vec<String> = Vec::new();
-    
+
     if let Some(args_pair) = args_pair {
         if args_pair.as_rule() == Rule::arg_list {
             args = args_pair
@@ -671,9 +671,9 @@ fn evaluate_builtin_function_call(
                     builtins::BuiltinValue::String(s) => ExprValue::String(s),
                     builtins::BuiltinValue::Number(n) => ExprValue::Number(n),
                     builtins::BuiltinValue::Boolean(b) => ExprValue::Boolean(b),
-                    builtins::BuiltinValue::Array(l) => ExprValue::List(
-                        l.into_iter().map(|s| ExprValue::String(s)).collect()
-                    ),
+                    builtins::BuiltinValue::Array(l) => {
+                        ExprValue::List(l.into_iter().map(|s| ExprValue::String(s)).collect())
+                    }
                 }
             }
             Err(e) => {
