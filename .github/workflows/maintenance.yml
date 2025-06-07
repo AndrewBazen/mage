@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if ! command -v rustup &>/dev/null; then
+          if [ ! command -v rustup &>/dev/null ]; then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -112,7 +112,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if ! command -v rustup &>/dev/null; then
+          if [ ! command -v rustup &>/dev/null ]; then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -131,7 +131,7 @@ jobs:
           cargo audit --json > audit_results.json 2>&1 || true
 
           # Check if vulnerabilities were found
-          if command -v jq >/dev/null 2>&1 && jq -e '.vulnerabilities.found' audit_results.json > /dev/null 2>&1; then
+          if (command -v jq >/dev/null 2>&1 && jq -e '.vulnerabilities.found' audit_results.json > /dev/null 2>&1); then
             echo "⚠️ Security vulnerabilities found!"
             cargo audit
             echo "VULNERABILITIES_FOUND=true" >> $GITHUB_ENV
@@ -207,7 +207,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if ! command -v rustup &>/dev/null; then
+          if [ ! command -v rustup &>/dev/null ]; then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
@@ -318,7 +318,7 @@ jobs:
 
       - name: Install Rustup if missing
         run: |
-          if ! command -v rustup &>/dev/null; then
+          if [ ! command -v rustup &>/dev/null ]; then
             curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
