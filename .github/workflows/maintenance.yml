@@ -32,15 +32,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Rustup if missing
-        run: |
-          if (! command -v rustup &>/dev/null); then
-            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          fi
-
       - name: Install Rust
-        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install cargo tools
         run: |
@@ -110,15 +105,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rustup if missing
-        run: |
-          if (! command -v rustup &>/dev/null); then
-            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          fi
-
       - name: Install Rust
-        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install security tools
         run: |
@@ -205,15 +195,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rustup if missing
-        run: |
-          if (! command -v rustup &>/dev/null); then
-            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          fi
-
       - name: Install Rust
-        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install hyperfine
         run: |
@@ -315,16 +300,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rustup if missing
-        run: |
-          if (! command -v rustup &>/dev/null); then
-            curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          fi
-
       - name: Install Rust
-        run: rustup show || rustup install stable && rustup default stable && rustup default stable && rustup component add rustfmt clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install additional tools
         run: |
