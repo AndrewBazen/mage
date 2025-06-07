@@ -322,9 +322,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Wait for artifact availability
+        run: |
+          echo "⏳ Waiting for artifact to be fully uploaded..."
+          sleep 10
+          echo "✅ Proceeding with deployment"
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v3
+        with:
+          timeout: 600000
+          error_count: 10
+          reporting_interval: 5000
 
   validate-examples:
     name: Validate Examples
