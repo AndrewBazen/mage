@@ -3,6 +3,9 @@ use pest::iterators::Pairs;
 use std::collections::HashMap;
 use std::io::{self, Write};
 
+#[cfg(not(target_family = "windows"))]
+use std::env;
+
 pub struct FunctionDef<'i> {
     params: Vec<String>,
     body: Vec<pest::iterators::Pair<'i, Rule>>,
