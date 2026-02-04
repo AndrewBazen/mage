@@ -1,6 +1,6 @@
 pub mod repl {
     use crate::Rule;
-    use crate::interpreter::interpret;
+    use crate::interpreter::{ExprValue, interpret};
     use crate::parser::MageParser;
     use crate::syntax;
     use pest::Parser;
@@ -186,16 +186,7 @@ pub mod repl {
                                     // Add the rest with appropriate colors
                                     for i in 1..node.child_count() {
                                         if let Some(child) = node.child(i) {
-                                            if child.kind() == "string"
-                                                || child.kind() == "number"
-                                                || child.kind() == "comment"
-                                            {
-                                                highlight_node(&child, source, result, colors);
-                                            } else {
-                                                result.push_str(
-                                                    &source[child.start_byte()..child.end_byte()],
-                                                );
-                                            }
+                                            highlight_node(&child, source, result, colors);
                                         }
                                     }
                                 }
@@ -203,40 +194,40 @@ pub mod repl {
                             _ => {
                                 // Process children for complex nodes
                                 if node.child_count() > 0 {
+                                    result.push_str(node_text);
+                                } else {
                                     for i in 0..node.child_count() {
                                         if let Some(child) = node.child(i) {
                                             highlight_node(&child, source, result, colors);
                                         }
                                     }
-                                } else {
-                                    // Just append the text for other nodes
-                                    result.push_str(node_text);
                                 }
                             }
                         }
                     }
 
-                    // Start from the root node
-                    highlight_node(&tree.root_node(), line, &mut result, colors);
+                    let root = tree.root_node();
+                    highlight_node(&root, line, &mut result, colors);
 
-                    return Cow::Owned(result);
+                    if result.is_empty() {
+                        return Cow::Owned(result);
+                    }
                 }
             }
 
             // Fallback to basic keyword highlighting
             let keywords = [
-                "conjure", "incant", "curse", "evoke", "if", "loop", "chant", "cast", "enchant",
-                "exit", "quit", "help", "clear",
+                "conjure", "incant", "curse", "evoke", "scry", "morph", "lest", "chant", "recite",
+                "channel", "loop", "enchant", "cast", "yield",
             ];
 
             // Apply simple syntax highlighting with colors
             let colors = &self.syntax_colors;
             let mut out = String::new();
-
-            // Simple string detection
+            let mut buffer = String::new();
             let mut in_string = false;
             let mut in_comment = false;
-            let mut buffer = String::new();
+            
 
             for (i, c) in line.chars().enumerate() {
                 if in_comment {
@@ -258,7 +249,6 @@ pub mod repl {
                         in_string = false;
                     }
                 } else if c == '"' {
-                    // Found start of string
                     if !buffer.is_empty() {
                         let word_ended = buffer
                             .chars()
@@ -366,7 +356,7 @@ pub mod repl {
             println!("🪄 Using shell: {}", shell);
         }
 
-        let mut scope = HashMap::new();
+        let mut scope: HashMap<String, ExprValue> = HashMap::new();
         let mut functions = HashMap::new();
 
         // Setup rustyline with our MageCompleter

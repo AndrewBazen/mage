@@ -13,7 +13,7 @@ pub mod setup;
 pub mod syntax;
 
 use crate::config::MageConfig;
-use crate::interpreter::interpret;
+use crate::interpreter::{ExprValue, interpret};
 use pest::Parser;
 use pest::iterators::Pairs;
 
@@ -38,7 +38,7 @@ pub fn run(source: &str, cli_shell: Option<&str>) -> Result<(), String> {
         .or(script_shell)
         .or(config_shell);
 
-    let mut scope = HashMap::new();
+    let mut scope: HashMap<String, ExprValue> = HashMap::new();
     let mut functions = HashMap::new();
     let pairs = MageParser::parse(crate::Rule::program, source);
     match pairs {
