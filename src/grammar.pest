@@ -5,7 +5,7 @@ SINGLE_COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
 MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 
 program     =  { SOI ~ (incantation | COMMENT)* ~ EOI }
-incantation   =  { conjure | incant | curse | evoke | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
+incantation   =  { conjure | incant | curse | evoke | bestow | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
 
 enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ block }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
@@ -36,6 +36,7 @@ conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression }
 incant      =  { "incant" ~ expression }
 curse       =  { "curse" ~ string }
 evoke       =  { "evoke" ~ string }
+bestow      =  { "bestow" ~ expression }
 yield_stmt  =  { "yield" ~ expression }
 
 // Semicolon-terminated versions for use inside blocks
@@ -43,10 +44,11 @@ conjure_stmt = { "conjure" ~ IDENT ~ "=" ~ expression ~ ";" }
 incant_stmt  = { "incant" ~ expression ~ ";" }
 curse_stmt   = { "curse" ~ string ~ ";" }
 evoke_stmt   = { "evoke" ~ string ~ ";" }
+bestow_stmt  = { "bestow" ~ expression ~ ";" }
 yield_stmt_semi = { "yield" ~ expression ~ ";" }
 
 // General statement rule that prioritizes semicolon-terminated statements
-statement = { conjure_stmt | incant_stmt | curse_stmt | evoke_stmt | yield_stmt_semi }
+statement = { conjure_stmt | incant_stmt | curse_stmt | evoke_stmt | bestow_stmt | yield_stmt_semi }
 
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ string_char* ~ "\"" }
