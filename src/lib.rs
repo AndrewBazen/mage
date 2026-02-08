@@ -84,7 +84,7 @@ fn format_pair(pair: pest::iterators::Pair<Rule>) -> String {
     }
 }
 
-pub fn parse_ast(source: &str) -> Result<Pairs<Rule>, String> {
+pub fn parse_ast(source: &str) -> Result<Pairs<'_, Rule>, String> {
     MageParser::parse(crate::Rule::program, source).map_err(|e| format!("Parse error: {}", e))
 }
 

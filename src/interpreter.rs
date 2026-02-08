@@ -1,7 +1,6 @@
 use crate::{Rule, builtins};
 use pest::iterators::Pairs;
 use std::collections::HashMap;
-use std::future;
 use std::io::{self, Write};
 
 #[cfg(not(target_family = "windows"))]
@@ -165,9 +164,9 @@ fn match_incantation<'i>(
 // ─── Variable Declaration ────────────────────────────────────────────
 
 fn handle_conjure(
-    pair: pest::iterators::Pair<Rule>, 
-    scope: &mut HashMap<String, ExprValue>
-    , functions: &mut HashMap<String, FunctionDef>
+    pair: pest::iterators::Pair<Rule>,
+    scope: &mut HashMap<String, ExprValue>,
+    functions: &mut HashMap<String, FunctionDef>,
 ) {
     let mut inner = pair.into_inner();
     let ident = inner.next().unwrap().as_str().to_string();
@@ -181,9 +180,9 @@ fn handle_conjure(
 // ─── Output ──────────────────────────────────────────────────────────
 
 fn handle_incant(
-    pair: pest::iterators::Pair<Rule>, 
-    scope: &mut HashMap<String, ExprValue>
-    , functions: &mut HashMap<String, FunctionDef>
+    pair: pest::iterators::Pair<Rule>,
+    scope: &mut HashMap<String, ExprValue>,
+    functions: &mut HashMap<String, FunctionDef>,
 ) {
     let expression_pair = pair.into_inner().next().unwrap();
     let result = evaluate_expression(expression_pair, scope, functions);
@@ -557,8 +556,8 @@ fn handle_cast<'i>(
             scope.insert(param.clone(), arg);
         }
         for stmt in func.body.clone() {
-            if let Some(val) = match_incantation(stmt, &mut scope, functions) {
-                // Got a bestowed value
+            if let Some(_val) = match_incantation(stmt, &mut scope, functions) {
+                // Got a bestowed value (not used in statement context)
                 return;
             }
         }
@@ -590,11 +589,10 @@ fn resolve_args(
 fn handle_bestow(
     pair: pest::iterators::Pair<Rule>,
     scope: &mut HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
-    let expression_pair : pest::iterators::Pair<Rule> = pair.into_inner().next().unwrap();
-    let result : ExprValue = evaluate_expression(expression_pair, scope, functions);
-    result
+    let expression_pair = pair.into_inner().next().unwrap();
+    evaluate_expression(expression_pair, scope, functions)
 }
 
 /// Resolve a single argument value, evaluating it as a factor
@@ -949,7 +947,7 @@ fn process_escape_sequences(text: &str) -> String {
     result
 }
 
-fn interpolate(text: &str, scope: &mut HashMap<String, ExprValue>) -> String {
+fn interpolate(text: &str, scope: &HashMap<String, ExprValue>) -> String {
     let mut result = String::new();
     let mut chars = text.chars().peekable();
 
