@@ -72,27 +72,31 @@ pub fn interpret<'i>(
     for pair in pairs {
         if pair.as_rule() == Rule::program {
             for incantation in pair.into_inner() {
-                if incantation.as_rule() == Rule::incantation {
-                    let mut inner = incantation.into_inner();
-                    let stmt = inner.next().unwrap();
-
-                    match stmt.as_rule() {
-                        Rule::conjure => handle_conjure(stmt, scope, functions),
-                        Rule::incant => handle_incant(stmt, scope, functions),
-                        Rule::curse => handle_curse(stmt),
-                        Rule::evoke => handle_evoke(stmt, scope, shell_override),
-                        Rule::scry_chain => handle_scry_chain(stmt, scope, functions),
-                        Rule::channel_block => handle_channel_block(stmt, scope, functions),
-                        Rule::chant_block => handle_chant_block(stmt, scope, functions),
-                        Rule::recite_block => handle_recite_block(stmt, scope, functions),
-                        Rule::loop_block => handle_loop_block(stmt, scope, functions),
-                        Rule::enchant => handle_enchant(stmt, functions),
-                        Rule::cast => handle_cast(stmt, scope, functions),
-                        _ => unreachable!("Unknown statement: {:?}", stmt),
-                    }
-                }
+                // incantation directly matches statement types now
+                match_incantation_with_shell(incantation, scope, functions, shell_override);
             }
         }
+    }
+}
+
+/// Top-level incantation handler that supports shell override
+fn match_incantation_with_shell<'i>(
+    stmt: pest::iterators::Pair<'i, Rule>,
+    scope: &mut HashMap<String, ExprValue>,
+    functions: &mut HashMap<String, FunctionDef<'i>>,
+    shell_override: Option<&str>,
+) -> Option<ExprValue> {
+    match stmt.as_rule() {
+        // Unwrap the incantation wrapper to get the actual statement
+        Rule::incantation => {
+            let inner = stmt.into_inner().next().unwrap();
+            match_incantation_with_shell(inner, scope, functions, shell_override)
+        }
+        Rule::evoke => {
+            handle_evoke(stmt, scope, shell_override);
+            None
+        }
+        _ => match_incantation(stmt, scope, functions),
     }
 }
 
@@ -102,29 +106,19 @@ fn match_incantation<'i>(
     functions: &mut HashMap<String, FunctionDef<'i>>,
 ) -> Option<ExprValue> {
     match stmt.as_rule() {
-        Rule::incantation => {
-            let mut inner = stmt.into_inner();
-            let stmt = inner.next().unwrap();
-            match_incantation(stmt, scope, functions)
-        }
-        Rule::statement => {
-            let mut inner = stmt.into_inner();
-            let stmt = inner.next().unwrap();
-            match_incantation(stmt, scope, functions)
-        }
-        Rule::conjure | Rule::conjure_stmt => {
+        Rule::conjure => {
             handle_conjure(stmt, scope, functions);
             None
         }
-        Rule::incant | Rule::incant_stmt => {
+        Rule::incant => {
             handle_incant(stmt, scope, functions);
             None
         }
-        Rule::curse | Rule::curse_stmt => {
+        Rule::curse => {
             handle_curse(stmt);
             None
         }
-        Rule::evoke | Rule::evoke_stmt => {
+        Rule::evoke => {
             handle_evoke(stmt, scope, None);
             None
         }
@@ -156,8 +150,9 @@ fn match_incantation<'i>(
             handle_cast(stmt, scope, functions);
             None
         }
-        Rule::bestow | Rule::bestow_stmt => Some(handle_bestow(stmt, scope, functions)),
-        _ => None // Skip unhandled types like comments or strings
+        Rule::bestow => Some(handle_bestow(stmt, scope, functions)),
+        Rule::yield_stmt => Some(handle_yield(stmt, scope, functions)),
+        _ => None // Skip unhandled types like comments or EOI
     }
 }
 
@@ -587,6 +582,16 @@ fn resolve_args(
 
 /// Handle the bestow statement to return a value to the parent scope
 fn handle_bestow(
+    pair: pest::iterators::Pair<Rule>,
+    scope: &mut HashMap<String, ExprValue>,
+    functions: &mut HashMap<String, FunctionDef>,
+) -> ExprValue {
+    let expression_pair = pair.into_inner().next().unwrap();
+    evaluate_expression(expression_pair, scope, functions)
+}
+
+/// Handle the yield statement to return a value (alias for bestow)
+fn handle_yield(
     pair: pest::iterators::Pair<Rule>,
     scope: &mut HashMap<String, ExprValue>,
     functions: &mut HashMap<String, FunctionDef>,

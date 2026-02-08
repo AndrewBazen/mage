@@ -9,9 +9,9 @@ incantation   =  { conjure | incant | curse | evoke | bestow | scry_chain | chan
 
 enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ block }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
-block        = { "{" ~ (statement | incantation | COMMENT)* ~ "}" }
+block        = { "{" ~ (incantation | COMMENT)* ~ "}" }
 
-cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" }
+cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" ~ ";"}
 arg_list     = { value ~ ("," ~ value)* }
 
 scry_chain   = { "scry" ~ condition ~ block ~ morph_block* ~ lest_block? }
@@ -32,23 +32,12 @@ factor      = { value | "(" ~ expression ~ ")" }
 add_op      = { "+" | "-" }
 mult_op     = { "*" | "/" | "%" }
 
-conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression }
-incant      =  { "incant" ~ expression }
-curse       =  { "curse" ~ string }
-evoke       =  { "evoke" ~ string }
-bestow      =  { "bestow" ~ expression }
-yield_stmt  =  { "yield" ~ expression }
-
-// Semicolon-terminated versions for use inside blocks
-conjure_stmt = { "conjure" ~ IDENT ~ "=" ~ expression ~ ";" }
-incant_stmt  = { "incant" ~ expression ~ ";" }
-curse_stmt   = { "curse" ~ string ~ ";" }
-evoke_stmt   = { "evoke" ~ string ~ ";" }
-bestow_stmt  = { "bestow" ~ expression ~ ";" }
-yield_stmt_semi = { "yield" ~ expression ~ ";" }
-
-// General statement rule that prioritizes semicolon-terminated statements
-statement = { conjure_stmt | incant_stmt | curse_stmt | evoke_stmt | bestow_stmt | yield_stmt_semi }
+conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression ~ ";" }
+incant      =  { "incant" ~ expression ~ ";" }
+curse       =  { "curse" ~ string ~ ";"}
+evoke       =  { "evoke" ~ string ~ ";"}
+bestow      =  { "bestow" ~ expression ~ ";"}
+yield_stmt  =  { "yield" ~ expression ~ ";"}
 
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ string_char* ~ "\"" }

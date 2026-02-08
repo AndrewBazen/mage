@@ -4,10 +4,10 @@ use std::process::Command;
 #[test]
 fn test_hello_mage_script() {
     // Write a temporary .mage script
-    let script = "conjure name = \"Mage\"\n\
-incant \"Hello, $name!\"\n\
+    let script = "conjure name = \"Mage\";\n\
+incant \"Hello, $name!\";\n\
 ##\n# This is a multi-line comment\n# Another line\n##\n\
-incant \"Bye, ${name}!\"\n";
+incant \"Bye, ${name}!\";\n";
     let script_path = "tests/tmp_hello.mage";
     fs::write(script_path, script).unwrap();
 
