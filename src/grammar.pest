@@ -5,7 +5,7 @@ SINGLE_COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
 MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 
 program      =  { SOI ~ (incantation | COMMENT)* ~ EOI }
-incantation  =  { conjure | incant | curse | evoke | bestow | dispel | portal | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
+incantation  =  { conjure | incant | curse | summon | evoke | bestow | dispel | portal | scry_chain | invoke_block | seal_block | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
 
 enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ block }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
@@ -18,6 +18,9 @@ arg_list     = { value ~ ("," ~ value)* }
 scry_chain   = { "scry" ~ condition ~ block ~ morph_block* ~ lest_block? }
 morph_block  = { "morph" ~ condition ~ block }
 lest_block   = { "lest" ~ block }
+
+invoke_block = { "invoke" ~ block ~ seal_block }
+seal_block = { "seal" ~ ("(" ~ IDENT ~ ")")? ~ block }
 
 channel_block = { "channel" ~ condition ~ block }
 chant_block  = { "chant" ~ IDENT ~ "from" ~ expression ~ "to" ~ expression ~ ("step" ~ expression)? ~ block }
@@ -36,6 +39,7 @@ mult_op     = { "*" | "/" | "%" }
 conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression ~ ";"? }
 incant      =  { "incant" ~ expression ~ ";"? }
 curse       =  { "curse" ~ string ~ ";"? }
+summon      =  { "summon" ~ expression ~ ";"? }
 evoke       =  { "evoke" ~ string ~ ";"? }
 bestow      =  { "bestow" ~ expression ~ ";"? }
 yield_stmt  =  { "yield" ~ expression ~ ";"? }

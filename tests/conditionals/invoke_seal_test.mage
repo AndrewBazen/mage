@@ -1,0 +1,30 @@
+# Test invoke/seal (try/catch) functionality
+
+# Test 1: Error is caught and handled with summon
+incant "Test 1: Basic error catching"
+invoke {
+    incant "Before error"
+    summon "Something went wrong!"
+    incant "After error - should not print"
+} seal (err) {
+    incant "Caught error: ${err}"
+}
+
+# Test 2: No error - seal block should not execute
+incant "Test 2: No error case"
+invoke {
+    incant "No error here"
+} seal {
+    incant "This should not print"
+}
+
+# Test 3: Summon with expression
+incant "Test 3: Summon with expression"
+conjure error_code = 42
+invoke {
+    summon "Error code: " + error_code
+} seal (e) {
+    incant "Caught: ${e}"
+}
+
+incant "Tests complete!"
