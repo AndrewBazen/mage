@@ -1,22 +1,21 @@
 # This script demonstrates basic Mage functionality
 
 # Output some system info
-incant "📜 Running config demo script"
+incant "Running config demo script"
 evoke "whoami"
 
 # Set a variable
 conjure config_file = "config_exists"
 
 # Simple conditional
-if config_file == "config_exists" {
-    incant "🔮 Config variable is set"
+scry config_file == "config_exists" {
+    incant "Config variable is set"
 }
 
 # Advanced conditional
-if config_file == "config_exists" {
-    incant "🔮 Config variable is set"
-} else {
-    incant "⚠️ No .mageconfig found in current directory"
+scry config_file == "config_exists" {
+    incant "Config variable is set"
+} lest {
+    incant "No .mageconfig found in current directory"
     incant "Try creating one with 'mage init'"
 }
-

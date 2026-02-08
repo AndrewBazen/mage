@@ -28,6 +28,14 @@ pub enum ExprValue {
     Map(HashMap<String, ExprValue>),
 }
 
+#[derive(Debug, Clone)]
+enum Signal {
+    None,                    // keep going
+    Return(ExprValue),       // bestow - exit function with value
+    Break,                   // dispel - exit loop
+    Continue,                // portal - next iteration
+}
+
 impl std::fmt::Display for ExprValue {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -85,7 +93,7 @@ fn match_incantation_with_shell<'i>(
     scope: &mut HashMap<String, ExprValue>,
     functions: &mut HashMap<String, FunctionDef<'i>>,
     shell_override: Option<&str>,
-) -> Option<ExprValue> {
+) -> Signal {
     match stmt.as_rule() {
         // Unwrap the incantation wrapper to get the actual statement
         Rule::incantation => {
@@ -94,7 +102,7 @@ fn match_incantation_with_shell<'i>(
         }
         Rule::evoke => {
             handle_evoke(stmt, scope, shell_override);
-            None
+            Signal::None
         }
         _ => match_incantation(stmt, scope, functions),
     }
@@ -104,55 +112,62 @@ fn match_incantation<'i>(
     stmt: pest::iterators::Pair<'i, Rule>,
     scope: &mut HashMap<String, ExprValue>,
     functions: &mut HashMap<String, FunctionDef<'i>>,
-) -> Option<ExprValue> {
+) -> Signal {
     match stmt.as_rule() {
+        // Unwrap the incantation wrapper to get the actual statement
+        Rule::incantation => {
+            let inner = stmt.into_inner().next().unwrap();
+            match_incantation(inner, scope, functions)
+        }
         Rule::conjure => {
             handle_conjure(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::incant => {
             handle_incant(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::curse => {
             handle_curse(stmt);
-            None
+            Signal::None
         }
         Rule::evoke => {
             handle_evoke(stmt, scope, None);
-            None
+            Signal::None
         }
         Rule::scry_chain => {
             handle_scry_chain(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::channel_block => {
             handle_channel_block(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::chant_block => {
             handle_chant_block(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::recite_block => {
             handle_recite_block(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::loop_block => {
             handle_loop_block(stmt, scope, functions);
-            None
+            Signal::None
         }
         Rule::enchant => {
             handle_enchant(stmt, functions);
-            None
+            Signal::None
         }
         Rule::cast => {
             handle_cast(stmt, scope, functions);
-            None
+            Signal::None
         }
-        Rule::bestow => Some(handle_bestow(stmt, scope, functions)),
-        Rule::yield_stmt => Some(handle_yield(stmt, scope, functions)),
-        _ => None // Skip unhandled types like comments or EOI
+        Rule::bestow => Signal::Return(handle_bestow(stmt, scope, functions)),
+        Rule::yield_stmt => Signal::Return(handle_yield(stmt, scope, functions)),
+        Rule::dispel => Signal::Break,
+        Rule::portal => Signal::Continue,
+        _ => Signal::None // Skip unhandled types like comments or EOI
     }
 }
 
@@ -505,15 +520,21 @@ fn handle_enchant<'i>(
 ) {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str().to_string();
-    let params_pair = inner.next().unwrap();
-    let mut params = Vec::new();
-    if params_pair.as_rule() == Rule::param_list {
-        params = params_pair
+
+    // Next element could be param_list or block (param_list is optional)
+    let next_pair = inner.next().unwrap();
+    let (params, body_pair) = if next_pair.as_rule() == Rule::param_list {
+        let params = next_pair
             .into_inner()
             .map(|p| p.as_str().to_string())
             .collect();
-    }
-    let body_pair = inner.next().unwrap();
+        let body_pair = inner.next().unwrap();
+        (params, body_pair)
+    } else {
+        // No params, next_pair is the block
+        (Vec::new(), next_pair)
+    };
+
     let body: Vec<_> = body_pair.into_inner().collect();
     let func = FunctionDef { params, body };
     functions.insert(name, func);
@@ -551,7 +572,7 @@ fn handle_cast<'i>(
             scope.insert(param.clone(), arg);
         }
         for stmt in func.body.clone() {
-            if let Some(_val) = match_incantation(stmt, &mut scope, functions) {
+            if let Signal::Return(_val) = match_incantation(stmt, &mut scope, functions) {
                 // Got a bestowed value (not used in statement context)
                 return;
             }
@@ -652,7 +673,7 @@ fn evaluate_term(
     result
 }
 
-fn evaluate_builtin_function_call(
+fn evaluate_function_call(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
     functions: &mut HashMap<String, FunctionDef>
@@ -682,7 +703,7 @@ fn evaluate_builtin_function_call(
 
         // execute the body of the function, checking for bestow
         for stmt in func.body.clone() {
-            if let Some(val) = match_incantation(stmt, &mut func_scope, functions) {
+            if let Signal::Return(val) = match_incantation(stmt, &mut func_scope, functions) {
                 return val;
             }
         }
@@ -739,8 +760,8 @@ fn evaluate_factor(
                         ExprValue::String(format!("${{{}}}", var_name))
                     }
                 }
-                Rule::cast => {
-                    evaluate_builtin_function_call(inner_value, scope, functions)
+                Rule::call => {
+                    evaluate_function_call(inner_value, scope, functions)
                 }
                 _ => ExprValue::Number(0.0),
             }
