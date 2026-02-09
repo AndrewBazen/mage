@@ -328,6 +328,10 @@ fn handle_evoke(
 
     match output {
         Ok(output) => {
+            // after the command runs
+            let code = output.status.code().unwrap_or(1);
+            scope.insert("_exit".to_string(), ExprValue::Number(code as f64));
+            
             if !output.stdout.is_empty() {
                 print!("{}", String::from_utf8_lossy(&output.stdout));
             }
@@ -817,6 +821,50 @@ fn evaluate_function_call(
     }
 }
 
+fn evaluate_method_call(
+    pair: pest::iterators::Pair<Rule>,
+    scope: &HashMap<String, ExprValue>,
+    functions: &mut HashMap<String, FunctionDef>
+) -> ExprValue {
+    let mut inner = pair.into_inner();
+    let object_pair = inner.next().unwrap();
+    let method_name = inner.next().unwrap().as_str();
+    let args_pair = inner.next();
+
+    // Evaluate the object based on its rule type
+    let object = match object_pair.as_rule() {
+        Rule::IDENT => {
+            let var_name = object_pair.as_str();
+            if let Some(val) = scope.get(var_name) {
+                val.clone()
+            } else {
+                eprintln!("❌ Unknown variable: {}", var_name);
+                ExprValue::String("".to_string())
+            }
+        }
+        Rule::string => {
+            ExprValue::String(process_escape_sequences(
+                object_pair.as_str().trim_matches('"')
+            ))
+        }
+        _ => evaluate_factor(object_pair, scope, functions),
+    };
+
+    // Get the args, if any
+    let args = resolve_args(args_pair, scope, functions);
+
+    // Dispatch based on object type and method name
+    match object {
+        ExprValue::String(s) => call_string_method(&s, method_name, args),
+        ExprValue::List(l) => call_list_method(&l, method_name, args),
+        ExprValue::Map(m) => call_map_method(&m, method_name, args),
+        _ => {
+            eprintln!("❌ Cannot call method on {:?}", object);
+            ExprValue::String("".to_string())
+        }
+    }
+}
+
 fn evaluate_factor(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
@@ -865,6 +913,12 @@ fn evaluate_factor(
                 Rule::call => {
                     evaluate_function_call(inner_value, scope, functions)
                 }
+                Rule::method_call => {
+                    evaluate_method_call(inner_value, scope, functions)
+                }
+                Rule::imbue => {
+                    evaluate_imbue(inner_value, scope, None)
+                }
                 _ => ExprValue::Number(0.0),
             }
         }
@@ -872,6 +926,29 @@ fn evaluate_factor(
         _ => {
             eprintln!("❌ Unexpected factor: {:?}", pair.as_rule());
             ExprValue::Number(0.0)
+        }
+    }
+}
+
+fn evaluate_imbue(
+    pair: pest::iterators::Pair<'_, Rule>,
+    scope: &HashMap<String, ExprValue>,
+    shell_override: Option<&str>
+) -> ExprValue {
+    let raw = pair.into_inner().next().unwrap().as_str().trim_matches('"');
+    let command = interpolate(raw, scope);
+
+    eprintln!("DEBUG: running command: {}", command);
+
+    match shell_command(&command, shell_override).output() {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            eprintln!("DEBUG: got stdout: {}", stdout);
+            ExprValue::String(stdout)
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to imbue command: {}", e);
+            ExprValue::String("".to_string())
         }
     }
 }
@@ -1147,4 +1224,122 @@ fn interpolate(text: &str, scope: &HashMap<String, ExprValue>) -> String {
     }
 
     result
+}
+
+// String methods
+
+fn call_string_method(
+    s: &str,
+    method_name: &str,
+    args: Vec<ExprValue>,
+) -> ExprValue {
+    match method_name {
+        "upper" => ExprValue::String(s.to_uppercase()),
+        "lower" => ExprValue::String(s.to_lowercase()),
+        "trim" => ExprValue::String(s.trim().to_string()),
+        "len" => ExprValue::Number(s.len() as f64),
+        "contains" => {
+            if let Some(ExprValue::String(substr)) = args.first() {
+                ExprValue::Boolean(s.contains(substr.as_str()))
+            } else {
+                eprintln!("❌ contains requires a string argument");
+                ExprValue::Boolean(false)
+            }
+        }
+        "replace" => {
+            if args.len() >= 2 {
+                if let (Some(ExprValue::String(from)), Some(ExprValue::String(to))) = (args.get(0), args.get(1)) {
+                    ExprValue::String(s.replace(from.as_str(), to.as_str()))
+                } else {
+                    eprintln!("❌ replace requires two string arguments");
+                    ExprValue::String(s.to_string())
+                }
+            } else {
+                eprintln!("❌ replace requires two arguments");
+                ExprValue::String(s.to_string())
+            }
+        }
+        "split" => {
+            if let Some(ExprValue::String(delim)) = args.first() {
+                let parts: Vec<ExprValue> = s.split(delim.as_str())
+                    .map(|p| ExprValue::String(p.to_string()))
+                    .collect();
+                ExprValue::List(parts)
+            } else {
+                eprintln!("❌ split requires a string delimiter");
+                ExprValue::List(vec![])
+            }
+        }
+        _ => {
+            eprintln!("❌ Unknown string method: {}", method_name);
+            ExprValue::String("".to_string())
+        }
+    }
+}
+
+// List methods
+
+fn call_list_method(
+    l: &Vec<ExprValue>,
+    method_name: &str,
+    _args: Vec<ExprValue>,
+) -> ExprValue {
+    match method_name {
+        "len" => ExprValue::Number(l.len() as f64),
+        "first" => l.first().cloned().unwrap_or(ExprValue::String("".to_string())),
+        "last" => l.last().cloned().unwrap_or(ExprValue::String("".to_string())),
+        "join" => {
+            if let Some(ExprValue::String(delim)) = _args.first() {
+                let joined: String = l.iter()
+                    .map(|v| v.to_display_string())
+                    .collect::<Vec<_>>()
+                    .join(delim);
+                ExprValue::String(joined)
+            } else {
+                let joined: String = l.iter()
+                    .map(|v| v.to_display_string())
+                    .collect::<Vec<_>>()
+                    .join("");
+                ExprValue::String(joined)
+            }
+        }
+        _ => {
+            eprintln!("❌ Unknown list method: {}", method_name);
+            ExprValue::String("".to_string())
+        }
+    }
+}
+
+// Map methods
+
+fn call_map_method(
+    m: &HashMap<String, ExprValue>,
+    method_name: &str,
+    _args: Vec<ExprValue>,
+) -> ExprValue {
+    match method_name {
+        "len" => ExprValue::Number(m.len() as f64),
+        "keys" => {
+            let keys: Vec<ExprValue> = m.keys()
+                .map(|k| ExprValue::String(k.clone()))
+                .collect();
+            ExprValue::List(keys)
+        }
+        "values" => {
+            let values: Vec<ExprValue> = m.values().cloned().collect();
+            ExprValue::List(values)
+        }
+        "has" => {
+            if let Some(ExprValue::String(key)) = _args.first() {
+                ExprValue::Boolean(m.contains_key(key))
+            } else {
+                eprintln!("❌ has requires a string key");
+                ExprValue::Boolean(false)
+            }
+        }
+        _ => {
+            eprintln!("❌ Unknown map method: {}", method_name);
+            ExprValue::String("".to_string())
+        }
+    }
 }

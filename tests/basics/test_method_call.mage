@@ -1,0 +1,3 @@
+conjure name = "hello"
+conjure upper = name.upper()
+incant upper
