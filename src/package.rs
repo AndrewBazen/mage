@@ -167,10 +167,10 @@ impl PackageResolver {
             visited.insert(name.clone());
 
             // Skip platform-specific packages
-            if let Some(platform) = &dep.platform {
-                if platform != std::env::consts::OS {
-                    continue;
-                }
+            if let Some(platform) = &dep.platform
+                && platform != std::env::consts::OS
+            {
+                continue;
             }
 
             // Resolve package version and source
@@ -233,15 +233,15 @@ impl PackageResolver {
         _lock: &Option<PackageLock>,
     ) -> Result<(), String> {
         // Check if package is platform-specific
-        if let Some(platform) = &dep.platform {
-            if platform != &std::env::consts::OS.to_string() {
-                println!(
-                    "⏭️  Skipping {} (not for platform {})",
-                    name,
-                    std::env::consts::OS
-                );
-                return Ok(());
-            }
+        if let Some(platform) = &dep.platform
+            && platform != &std::env::consts::OS.to_string()
+        {
+            println!(
+                "⏭️  Skipping {} (not for platform {})",
+                name,
+                std::env::consts::OS
+            );
+            return Ok(());
         }
 
         println!("📦 Installing {}...", name);

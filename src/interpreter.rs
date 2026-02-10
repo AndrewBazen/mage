@@ -152,7 +152,7 @@ fn match_incantation<'i>(
         }
         Rule::bestow => Some(handle_bestow(stmt, scope, functions)),
         Rule::yield_stmt => Some(handle_yield(stmt, scope, functions)),
-        _ => None // Skip unhandled types like comments or EOI
+        _ => None, // Skip unhandled types like comments or EOI
     }
 }
 
@@ -565,7 +565,7 @@ fn handle_cast<'i>(
 fn resolve_args(
     args_pair: Option<pest::iterators::Pair<Rule>>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> Vec<ExprValue> {
     let Some(args_pair) = args_pair else {
         return Vec::new();
@@ -604,7 +604,7 @@ fn handle_yield(
 fn resolve_single_arg(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
     // The arg is a 'value' rule - evaluate it through the normal path
     evaluate_factor(pair, scope, functions)
@@ -615,7 +615,7 @@ fn resolve_single_arg(
 fn evaluate_expression(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
     match pair.as_rule() {
         Rule::expression => {
@@ -639,7 +639,7 @@ fn evaluate_expression(
 fn evaluate_term(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
     let mut inner = pair.into_inner();
     let mut result = evaluate_factor(inner.next().unwrap(), scope, functions);
@@ -655,7 +655,7 @@ fn evaluate_term(
 fn evaluate_builtin_function_call(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str();
@@ -697,7 +697,7 @@ fn evaluate_builtin_function_call(
 fn evaluate_factor(
     pair: pest::iterators::Pair<Rule>,
     scope: &HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> ExprValue {
     match pair.as_rule() {
         Rule::factor => {
@@ -726,7 +726,10 @@ fn evaluate_factor(
                             let mut parts = v.into_inner();
                             let key = parts.next().unwrap().as_str();
                             let value = parts.next().unwrap();
-                            (key.to_string(), evaluate_expression(value, scope, functions))
+                            (
+                                key.to_string(),
+                                evaluate_expression(value, scope, functions),
+                            )
                         })
                         .collect(),
                 ),
@@ -739,9 +742,7 @@ fn evaluate_factor(
                         ExprValue::String(format!("${{{}}}", var_name))
                     }
                 }
-                Rule::cast => {
-                    evaluate_builtin_function_call(inner_value, scope, functions)
-                }
+                Rule::cast => evaluate_builtin_function_call(inner_value, scope, functions),
                 _ => ExprValue::Number(0.0),
             }
         }
@@ -808,7 +809,7 @@ fn apply_mult_op(left: ExprValue, op: &str, right: ExprValue) -> ExprValue {
 fn eval_condition(
     pair: pest::iterators::Pair<'_, Rule>,
     scope: &mut HashMap<String, ExprValue>,
-    functions: &mut HashMap<String, FunctionDef>
+    functions: &mut HashMap<String, FunctionDef>,
 ) -> bool {
     let mut inner = pair.into_inner();
     let left_expr = inner.next().unwrap();

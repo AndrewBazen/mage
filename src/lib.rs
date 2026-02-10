@@ -20,10 +20,10 @@ use pest::iterators::Pairs;
 pub use crate::parser::{MageParser, Rule};
 
 fn extract_shell_override(source: &str) -> Option<String> {
-    if let Some(first_line) = source.lines().next() {
-        if let Some(shell) = first_line.strip_prefix("#!shell:") {
-            return Some(shell.trim().to_string());
-        }
+    if let Some(first_line) = source.lines().next()
+        && let Some(shell) = first_line.strip_prefix("#!shell:")
+    {
+        return Some(shell.trim().to_string());
     }
     None
 }

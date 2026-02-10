@@ -336,11 +336,11 @@ fn create_symlink(source: &str, target: &str) -> Result<BuiltinValue, String> {
 
 fn write_file(path: &str, content: &str) -> Result<BuiltinValue, String> {
     // Create parent directory if it doesn't exist
-    if let Some(parent) = std::path::Path::new(path).parent() {
-        if !parent.exists() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create parent directory: {}", e))?;
-        }
+    if let Some(parent) = std::path::Path::new(path).parent()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create parent directory: {}", e))?;
     }
 
     std::fs::write(path, content)
@@ -691,10 +691,11 @@ fn search_for_package(package: &str, manager: &str) -> Option<String> {
 fn parse_apt_search(output: &str, package: &str) -> Option<String> {
     // apt search shows: "package-name/repo version [installed]"
     for line in output.lines() {
-        if line.contains(package) && !line.starts_with("WARNING") {
-            if let Some(pkg_name) = line.split('/').next() {
-                return Some(pkg_name.to_string());
-            }
+        if line.contains(package)
+            && !line.starts_with("WARNING")
+            && let Some(pkg_name) = line.split('/').next()
+        {
+            return Some(pkg_name.to_string());
         }
     }
     None
@@ -764,10 +765,11 @@ fn parse_winget_search(output: &str, package: &str) -> Option<String> {
 fn parse_choco_search(output: &str, package: &str) -> Option<String> {
     // choco search shows: "package-name version [Approved]"
     for line in output.lines() {
-        if line.starts_with(package) && line.contains(' ') {
-            if let Some(pkg_name) = line.split(' ').next() {
-                return Some(pkg_name.to_string());
-            }
+        if line.starts_with(package)
+            && line.contains(' ')
+            && let Some(pkg_name) = line.split(' ').next()
+        {
+            return Some(pkg_name.to_string());
         }
     }
     None
@@ -776,12 +778,11 @@ fn parse_choco_search(output: &str, package: &str) -> Option<String> {
 fn parse_pacman_search(output: &str, package: &str) -> Option<String> {
     // pacman -Ss shows: "repo/package-name version"
     for line in output.lines() {
-        if line.contains(&format!("/{}", package)) {
-            if let Some(pkg_part) = line.split(' ').next() {
-                if let Some(pkg_name) = pkg_part.split('/').nth(1) {
-                    return Some(pkg_name.to_string());
-                }
-            }
+        if line.contains(&format!("/{}", package))
+            && let Some(pkg_part) = line.split(' ').next()
+            && let Some(pkg_name) = pkg_part.split('/').nth(1)
+        {
+            return Some(pkg_name.to_string());
         }
     }
     None
@@ -830,12 +831,12 @@ fn parse_apt_search_multiple(output: &str, package: &str) -> Vec<(String, String
     let package_lower = package.to_lowercase();
 
     for line in output.lines() {
-        if !line.starts_with("WARNING") && line.contains('/') {
-            if let Some(pkg_name) = line.split('/').next() {
-                if pkg_name.to_lowercase().contains(&package_lower) {
-                    results.push((pkg_name.to_string(), pkg_name.to_string()));
-                }
-            }
+        if !line.starts_with("WARNING")
+            && line.contains('/')
+            && let Some(pkg_name) = line.split('/').next()
+            && pkg_name.to_lowercase().contains(&package_lower)
+        {
+            results.push((pkg_name.to_string(), pkg_name.to_string()));
         }
     }
 
@@ -866,12 +867,12 @@ fn parse_choco_search_multiple(output: &str, package: &str) -> Vec<(String, Stri
     let package_lower = package.to_lowercase();
 
     for line in output.lines() {
-        if line.contains(' ') && !line.starts_with("Chocolatey") {
-            if let Some(pkg_name) = line.split(' ').next() {
-                if pkg_name.to_lowercase().contains(&package_lower) {
-                    results.push((pkg_name.to_string(), pkg_name.to_string()));
-                }
-            }
+        if line.contains(' ')
+            && !line.starts_with("Chocolatey")
+            && let Some(pkg_name) = line.split(' ').next()
+            && pkg_name.to_lowercase().contains(&package_lower)
+        {
+            results.push((pkg_name.to_string(), pkg_name.to_string()));
         }
     }
 
@@ -885,14 +886,12 @@ fn parse_pacman_search_multiple(output: &str, package: &str) -> Vec<(String, Str
     let package_lower = package.to_lowercase();
 
     for line in output.lines() {
-        if line.contains('/') {
-            if let Some(pkg_part) = line.split(' ').next() {
-                if let Some(pkg_name) = pkg_part.split('/').nth(1) {
-                    if pkg_name.to_lowercase().contains(&package_lower) {
-                        results.push((pkg_name.to_string(), pkg_name.to_string()));
-                    }
-                }
-            }
+        if line.contains('/')
+            && let Some(pkg_part) = line.split(' ').next()
+            && let Some(pkg_name) = pkg_part.split('/').nth(1)
+            && pkg_name.to_lowercase().contains(&package_lower)
+        {
+            results.push((pkg_name.to_string(), pkg_name.to_string()));
         }
     }
 
@@ -939,10 +938,10 @@ fn map_package_name(package: &str, manager: &str) -> String {
         ),
     ]);
 
-    if let Some(pkg_map) = mappings.get(package) {
-        if let Some(mapped) = pkg_map.get(manager) {
-            return mapped.to_string();
-        }
+    if let Some(pkg_map) = mappings.get(package)
+        && let Some(mapped) = pkg_map.get(manager)
+    {
+        return mapped.to_string();
     }
 
     package.to_string()
