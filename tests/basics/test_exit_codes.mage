@@ -1,0 +1,7 @@
+evoke "dir"
+incant _exit
+
+evoke "nonexistent_command_that_will_fail"
+incant _exit
+
+incant "script finished executing"
