@@ -5,7 +5,7 @@ mod config;
 
 use std::io;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -15,8 +15,12 @@ use ratatui::{
 };
 
 use app::App;
+use config::TuiConfig;
 
 fn main() -> io::Result<()> {
+    // Load config
+    let config = TuiConfig::load();
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -24,8 +28,13 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Create app and run
+    // Create app with config and run
     let mut app = App::new();
+
+    // Apply config defaults
+    app.panels.output = config.layout.output_width > 0;
+    app.panels.context_menu = config.layout.context_width > 0;
+
     let res = run_app(&mut terminal, &mut app);
 
     // Restore terminal
@@ -49,6 +58,9 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
         terminal.draw(|f| ui::draw(f, app))?;
 
         if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
             // Global keybindings
             if key.modifiers.contains(KeyModifiers::CONTROL) {
                 match key.code {
@@ -56,6 +68,8 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
                     KeyCode::Char('p') => app.toggle_command_palette(),
                     KeyCode::Char('f') => app.toggle_file_browser(),
                     KeyCode::Char('g') => app.toggle_git_panel(),
+                    KeyCode::Char('o') => app.toggle_output_panel(),
+                    KeyCode::Char('e') => app.toggle_context_panel(),
                     _ => {}
                 }
             } else {
@@ -69,6 +83,8 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
                     KeyCode::Down => app.handle_down(),
                     KeyCode::Left => app.handle_left(),
                     KeyCode::Right => app.handle_right(),
+                    KeyCode::PageUp => app.scroll_up(),
+                    KeyCode::PageDown => app.scroll_down(),
                     _ => {}
                 }
             }

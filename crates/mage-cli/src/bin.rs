@@ -1,6 +1,7 @@
 pub mod repl {
     use mage_core::Rule;
     use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
+    use mage_core::output::OutputCollector;
     use mage_core::parser::MageParser;
     use crate::syntax;
     use pest::Parser;
@@ -347,6 +348,7 @@ pub mod repl {
 
         let mut scope: HashMap<String, ExprValue> = HashMap::new();
         let mut functions: HashMap<String, FunctionDef> = HashMap::new();
+        let mut output = OutputCollector::direct();
 
         // Setup rustyline with our MageCompleter
         let config = Config::builder().auto_add_history(true).build();
@@ -374,7 +376,9 @@ pub mod repl {
 
                         match MageParser::parse(Rule::program, input) {
                             Ok(pairs) => {
-                                interpret(pairs, shell_override, &mut scope, &mut functions)
+                                if let Err(e) = interpret(pairs, shell_override, &mut scope, &mut functions, &mut output) {
+                                    eprintln!("Error: {}", e);
+                                }
                             }
                             Err(e) => eprintln!("Error: {}", e),
                         }

@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 mage-core = { path = "../mage-core" }
+pest = "2.7"
 ratatui = "0.29"
 crossterm = "0.28"
 tokio = { version = "1", features = ["full"] }

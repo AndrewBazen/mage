@@ -6,16 +6,19 @@ use std::collections::HashMap;
 pub mod builtins;
 pub mod config;
 pub mod interpreter;
+pub mod output;
 pub mod package;
 pub mod parser;
 
 use crate::config::MageConfig;
 use crate::interpreter::{ExprValue, interpret};
+use crate::output::OutputCollector;
 use pest::Parser;
 use pest::iterators::Pairs;
 
 pub use crate::parser::{MageParser, Rule};
 pub use crate::interpreter::{ExprValue as Value, FunctionDef};
+pub use crate::output::{OutputCollector as Output, InterpreterError};
 
 /// Extract shell override from script source (e.g., `#!shell:bash`)
 fn extract_shell_override(source: &str) -> Option<String> {
@@ -39,11 +42,12 @@ pub fn run(source: &str, cli_shell: Option<&str>) -> Result<(), String> {
 
     let mut scope: HashMap<String, ExprValue> = HashMap::new();
     let mut functions = HashMap::new();
+    let mut output = OutputCollector::direct();
     let pairs = MageParser::parse(crate::Rule::program, source);
     match pairs {
         Ok(pairs) => {
-            interpret(pairs, shell_override.as_deref(), &mut scope, &mut functions);
-            Ok(())
+            interpret(pairs, shell_override.as_deref(), &mut scope, &mut functions, &mut output)
+                .map_err(|e| format!("{}", e))
         }
         Err(err) => Err(format!("Parse error: {}", err)),
     }

@@ -73,6 +73,7 @@ impl TuiConfig {
         Self::default()
     }
 
+    #[allow(dead_code)]
     pub fn save(&self) -> Result<(), String> {
         let config_dir = dirs::config_dir()
             .ok_or("Could not find config directory")?

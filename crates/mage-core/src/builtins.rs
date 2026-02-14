@@ -1,3 +1,4 @@
+use crate::output::OutputCollector;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -24,7 +25,7 @@ impl std::fmt::Display for BuiltinValue {
     }
 }
 
-pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, String> {
+pub fn call_builtin(name: &str, args: Vec<String>, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     match name {
         // System Information
         "platform" => Ok(BuiltinValue::String(detect_platform())),
@@ -114,7 +115,7 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
                     "install_package() requires exactly 1 argument: package_name".to_string(),
                 );
             }
-            install_package(&args[0])
+            install_package(&args[0], output)
         }
         "package_installed" => {
             if args.len() != 1 {
@@ -130,7 +131,7 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
             if args.len() != 1 {
                 return Err("package_init() requires exactly 1 argument: project_name".to_string());
             }
-            package_init(&args[0])
+            package_init(&args[0], output)
         }
         "package_add" => {
             if args.len() < 2 || args.len() > 3 {
@@ -140,7 +141,7 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
                 );
             }
             let is_dev = args.len() == 3 && args[2] == "--dev";
-            package_add(&args[0], &args[1], is_dev)
+            package_add(&args[0], &args[1], is_dev, output)
         }
         "package_remove" => {
             if args.len() != 1 {
@@ -148,11 +149,11 @@ pub fn call_builtin(name: &str, args: Vec<String>) -> Result<BuiltinValue, Strin
                     "package_remove() requires exactly 1 argument: package_name".to_string()
                 );
             }
-            package_remove(&args[0])
+            package_remove(&args[0], output)
         }
         "package_install" => {
             let dev = args.first().map(|s| s == "--dev").unwrap_or(false);
-            package_install_deps(dev)
+            package_install_deps(dev, output)
         }
         "package_list" => Ok(BuiltinValue::String(package_list())),
         "package_info" => {
@@ -483,14 +484,14 @@ fn package_manager_available(manager: &str) -> bool {
     which::which(manager).is_ok()
 }
 
-fn install_package(package: &str) -> Result<BuiltinValue, String> {
+fn install_package(package: &str, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     let pm = get_primary_package_manager();
     if pm == "none" {
         return Err("No package manager available".to_string());
     }
 
     // Search for multiple packages and let user choose
-    let package_name = match select_package_interactively(package, &pm) {
+    let package_name = match select_package_interactively(package, &pm, output) {
         Some(selected) => selected,
         None => {
             // Fallback to single search, then mapping
@@ -510,21 +511,21 @@ fn install_package(package: &str) -> Result<BuiltinValue, String> {
         _ => return Err(format!("Unsupported package manager: {}", pm)),
     };
 
-    println!("📦 Installing {} using {}...", package_name, pm);
+    output.println(&format!("Installing {} using {}...", package_name, pm));
 
-    let output = if cfg!(target_os = "windows") {
+    let cmd_output = if cfg!(target_os = "windows") {
         Command::new("cmd").args(["/C", &install_cmd]).output()
     } else {
         Command::new("sh").args(["-c", &install_cmd]).output()
     };
 
-    match output {
-        Ok(output) => {
-            if output.status.success() {
-                println!("✅ Successfully installed {}", package_name);
+    match cmd_output {
+        Ok(cmd_output) => {
+            if cmd_output.status.success() {
+                output.println(&format!("Successfully installed {}", package_name));
                 Ok(BuiltinValue::Boolean(true))
             } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
+                let stderr = String::from_utf8_lossy(&cmd_output.stderr);
                 Err(format!("Failed to install {}: {}", package_name, stderr))
             }
         }
@@ -593,7 +594,7 @@ fn search_for_packages(package: &str, manager: &str) -> Vec<(String, String)> {
     }
 }
 
-fn select_package_interactively(package: &str, manager: &str) -> Option<String> {
+fn select_package_interactively(package: &str, manager: &str, output: &mut OutputCollector) -> Option<String> {
     let matches = search_for_packages(package, manager);
 
     if matches.is_empty() {
@@ -601,30 +602,36 @@ fn select_package_interactively(package: &str, manager: &str) -> Option<String> 
     }
 
     if matches.len() == 1 {
-        // Only one match, use it automatically
         return Some(matches[0].1.clone());
     }
 
-    // Multiple matches - show selection menu
-    println!(
-        "🔍 Found {} packages matching '{}':",
-        matches.len(),
-        package
-    );
-    println!();
-
-    for (i, (name, id)) in matches.iter().enumerate() {
-        println!("  {}: {} ({})", i + 1, name, id);
+    // In buffered mode (TUI), skip interactive selection — use first match
+    if output.is_buffered() {
+        output.println(&format!(
+            "Found {} packages matching '{}', using first match: {}",
+            matches.len(), package, matches[0].1
+        ));
+        return Some(matches[0].1.clone());
     }
 
-    println!();
-    print!("Choose a package (1-{}, or 0 to cancel): ", matches.len());
+    // Multiple matches - show selection menu (direct/CLI mode only)
+    output.println(&format!(
+        "Found {} packages matching '{}':",
+        matches.len(),
+        package
+    ));
+    output.println("");
 
-    // Flush stdout to ensure prompt appears
+    for (i, (name, id)) in matches.iter().enumerate() {
+        output.println(&format!("  {}: {} ({})", i + 1, name, id));
+    }
+
+    output.println("");
+    output.print(&format!("Choose a package (1-{}, or 0 to cancel): ", matches.len()));
+
     use std::io::{self, Write};
     io::stdout().flush().ok();
 
-    // Read user input
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {
@@ -632,12 +639,12 @@ fn select_package_interactively(package: &str, manager: &str) -> Option<String> 
             if choice > 0 && choice <= matches.len() {
                 Some(matches[choice - 1].1.clone())
             } else {
-                println!("❌ Installation cancelled.");
+                output.println("Installation cancelled.");
                 None
             }
         }
         Err(_) => {
-            println!("❌ Failed to read input. Installation cancelled.");
+            output.println("Failed to read input. Installation cancelled.");
             None
         }
     }
@@ -978,7 +985,7 @@ fn get_env_var(name: &str, default: Option<&str>) -> String {
 }
 
 // Package Project Management Functions
-fn package_init(name: &str) -> Result<BuiltinValue, String> {
+fn package_init(name: &str, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     use std::env;
     let current_dir =
         env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
@@ -986,16 +993,16 @@ fn package_init(name: &str) -> Result<BuiltinValue, String> {
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.init_project(name)?;
 
-    println!("✅ Initialized mage project: {}", name);
-    println!("📁 Created project structure:");
-    println!("   mage.toml        - Project manifest");
-    println!("   scripts/         - Project scripts");
-    println!("   .mage/           - Package cache");
+    output.println(&format!("Initialized mage project: {}", name));
+    output.println("Created project structure:");
+    output.println("   mage.toml        - Project manifest");
+    output.println("   scripts/         - Project scripts");
+    output.println("   .mage/           - Package cache");
 
     Ok(BuiltinValue::Boolean(true))
 }
 
-fn package_add(package: &str, version: &str, is_dev: bool) -> Result<BuiltinValue, String> {
+fn package_add(package: &str, version: &str, is_dev: bool, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     use std::env;
     let current_dir =
         env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
@@ -1008,12 +1015,12 @@ fn package_add(package: &str, version: &str, is_dev: bool) -> Result<BuiltinValu
     } else {
         "dependency"
     };
-    println!("✅ Added {} {} @ {}", dep_type, package, version);
+    output.println(&format!("Added {} {} @ {}", dep_type, package, version));
 
     Ok(BuiltinValue::Boolean(true))
 }
 
-fn package_remove(package: &str) -> Result<BuiltinValue, String> {
+fn package_remove(package: &str, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     use std::env;
     let current_dir =
         env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
@@ -1021,12 +1028,12 @@ fn package_remove(package: &str) -> Result<BuiltinValue, String> {
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.remove_dependency(package)?;
 
-    println!("✅ Removed dependency: {}", package);
+    output.println(&format!("Removed dependency: {}", package));
 
     Ok(BuiltinValue::Boolean(true))
 }
 
-fn package_install_deps(dev: bool) -> Result<BuiltinValue, String> {
+fn package_install_deps(dev: bool, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
     use std::env;
     let current_dir =
         env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;
@@ -1034,7 +1041,7 @@ fn package_install_deps(dev: bool) -> Result<BuiltinValue, String> {
     let resolver = crate::package::PackageResolver::new(&current_dir);
     resolver.install_dependencies(dev)?;
 
-    println!("✅ Dependencies installed successfully");
+    output.println("Dependencies installed successfully");
 
     Ok(BuiltinValue::Boolean(true))
 }

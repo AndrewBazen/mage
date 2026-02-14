@@ -1,11 +1,17 @@
 use std::collections::HashMap;
-use mage_core::interpreter::ExprValue;
+use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
+use mage_core::output::OutputCollector;
+use mage_core::parser::MageParser;
+use mage_core::Rule;
+use pest::Parser;
 
 /// The current mode of the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Normal,
+    #[allow(dead_code)]
     Insert,
+    #[allow(dead_code)]
     Command,
     CommandPalette,
     FileBrowser,
@@ -34,6 +40,7 @@ impl Default for PanelState {
 
 /// Command history entry
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct HistoryEntry {
     pub command: String,
     pub output: String,
@@ -64,8 +71,12 @@ pub struct App {
     pub context_items: Vec<ContextItem>,
     /// Selected context item index
     pub context_index: usize,
-    /// Mage interpreter scope
+    /// Mage interpreter scope (persistent across commands)
     pub scope: HashMap<String, ExprValue>,
+    /// Mage function definitions (persistent across commands)
+    pub functions: HashMap<String, FunctionDef<'static>>,
+    /// Output scroll offset (0 = bottom)
+    pub scroll_offset: usize,
 }
 
 /// A context menu item (command suggestion)
@@ -97,6 +108,8 @@ impl App {
             context_items: Vec::new(),
             context_index: 0,
             scope: HashMap::new(),
+            functions: HashMap::new(),
+            scroll_offset: 0,
         }
     }
 
@@ -143,6 +156,14 @@ impl App {
         }
     }
 
+    pub fn toggle_output_panel(&mut self) {
+        self.panels.output = !self.panels.output;
+    }
+
+    pub fn toggle_context_panel(&mut self) {
+        self.panels.context_menu = !self.panels.context_menu;
+    }
+
     pub fn handle_escape(&mut self) {
         match self.mode {
             Mode::Insert | Mode::Command => self.mode = Mode::Normal,
@@ -168,30 +189,69 @@ impl App {
         self.input.clear();
         self.cursor_pos = 0;
 
-        // Execute the command using mage-core
-        let result = mage_core::run(&command, None);
+        // Echo the command
+        self.output.push(format!("> {}", command));
 
-        let (output, success) = match result {
-            Ok(()) => ("Command executed".to_string(), true),
-            Err(e) => (e, false),
+        // Leak input string to get 'static lifetime (same pattern as CLI REPL)
+        let input: &'static str = Box::leak(command.clone().into_boxed_str());
+
+        // Parse and interpret with persistent scope/functions and buffered output
+        let mut collector = OutputCollector::buffered();
+        let success = match MageParser::parse(Rule::program, input) {
+            Ok(pairs) => {
+                match interpret(pairs, None, &mut self.scope, &mut self.functions, &mut collector) {
+                    Ok(()) => true,
+                    Err(e) => {
+                        collector.eprintln(&format!("{}", e));
+                        false
+                    }
+                }
+            }
+            Err(e) => {
+                collector.eprintln(&format!("Parse error: {}", e));
+                false
+            }
         };
 
-        self.output.push(format!("> {}", command));
-        self.output.push(output.clone());
+        // Collect captured output
+        let stdout_lines = collector.take_stdout();
+        let stderr_lines = collector.take_stderr();
+
+        let mut output_text = String::new();
+
+        for line in &stdout_lines {
+            self.output.push(line.clone());
+            if !output_text.is_empty() {
+                output_text.push('\n');
+            }
+            output_text.push_str(line);
+        }
+        for line in &stderr_lines {
+            self.output.push(format!("[err] {}", line));
+            if !output_text.is_empty() {
+                output_text.push('\n');
+            }
+            output_text.push_str(line);
+        }
+
+        if stdout_lines.is_empty() && stderr_lines.is_empty() && success {
+            output_text = "OK".to_string();
+        }
 
         self.history.push(HistoryEntry {
             command,
-            output,
+            output: output_text,
             success,
         });
         self.history_index = None;
 
-        // Update context
+        // Auto-scroll to bottom on new output
+        self.scroll_offset = 0;
+
         self.update_context();
     }
 
     pub fn handle_tab(&mut self) {
-        // Tab completion / context menu selection
         if !self.context_items.is_empty() {
             self.context_index = (self.context_index + 1) % self.context_items.len();
         }
@@ -252,14 +312,25 @@ impl App {
         }
     }
 
+    pub fn scroll_up(&mut self) {
+        if self.scroll_offset + 1 < self.output.len() {
+            self.scroll_offset += 3;
+            if self.scroll_offset >= self.output.len() {
+                self.scroll_offset = self.output.len().saturating_sub(1);
+            }
+        }
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.scroll_offset = self.scroll_offset.saturating_sub(3);
+    }
+
     fn update_context(&mut self) {
-        // Update context menu based on current input
         self.context_items.clear();
         self.context_index = 0;
 
         let input_lower = self.input.to_lowercase();
 
-        // Mage keywords
         let keywords = [
             ("conjure", "Declare a variable"),
             ("incant", "Print output"),

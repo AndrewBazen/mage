@@ -251,7 +251,7 @@ impl PackageResolver {
                 if manager == "auto" {
                     // Use system package manager
                     let _ =
-                        crate::builtins::call_builtin("install_package", vec![name.to_string()])
+                        crate::builtins::call_builtin("install_package", vec![name.to_string()], &mut crate::output::OutputCollector::direct())
                             .map_err(|e| format!("Failed to install {}: {}", name, e))?;
                 } else {
                     // Use specific package manager
@@ -395,6 +395,7 @@ impl PackageResolver {
         let _ = crate::builtins::call_builtin(
             "download",
             vec![url.to_string(), download_path.to_string_lossy().to_string()],
+            &mut crate::output::OutputCollector::direct(),
         )
         .map_err(|e| format!("Failed to download package: {}", e))?;
 
