@@ -2,7 +2,7 @@
 name = "mage-tui"
 version = "0.1.0"
 edition = "2024"
-description = "Terminal UI shell for the Mage scripting language"
+description = "GUI shell for the Mage scripting language"
 
 [[bin]]
 name = "mage-shell"
@@ -11,8 +11,7 @@ path = "src/main.rs"
 [dependencies]
 mage-core = { path = "../mage-core" }
 pest = "2.7"
-ratatui = "0.29"
-crossterm = "0.28"
+iced = { version = "0.14", features = ["tokio"] }
 tokio = { version = "1", features = ["full"] }
 dirs = "5"
 serde = { version = "1", features = ["derive"] }
