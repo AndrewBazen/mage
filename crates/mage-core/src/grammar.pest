@@ -4,40 +4,47 @@ COMMENT = _{ SINGLE_COMMENT | MULTI_COMMENT }
 SINGLE_COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
 MULTI_COMMENT = _{ "##" ~ (NEWLINE ~ "#" ~ (!"##" ~ ANY)*)* ~ NEWLINE ~ "##" }
 
-program     =  { SOI ~ (incantation | COMMENT)* ~ EOI }
-incantation   =  { conjure | incant | curse | evoke | bestow | scry_chain | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
+program      =  { SOI ~ (incantation | COMMENT)* ~ EOI }
+incantation  =  { conjure | incant | curse | summon | evoke | bestow | dispel | portal | scry_chain | invoke_block | seal_block | channel_block | chant_block | recite_block | loop_block | enchant | cast | yield_stmt }
 
 enchant      = { "enchant" ~ IDENT ~ "(" ~ param_list? ~ ")" ~ block }
 param_list   = { IDENT ~ ("," ~ IDENT)* }
 block        = { "{" ~ (incantation | COMMENT)* ~ "}" }
 
-cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" ~ ";"}
+cast         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" ~ ";"? }
+call         = { "cast" ~ IDENT ~ "(" ~ arg_list? ~ ")" }
 arg_list     = { value ~ ("," ~ value)* }
 
 scry_chain   = { "scry" ~ condition ~ block ~ morph_block* ~ lest_block? }
 morph_block  = { "morph" ~ condition ~ block }
 lest_block   = { "lest" ~ block }
 
+invoke_block = { "invoke" ~ block ~ seal_block }
+seal_block = { "seal" ~ ("(" ~ IDENT ~ ")")? ~ block }
+
 channel_block = { "channel" ~ condition ~ block }
-chant_block = { "chant" ~ IDENT ~ "from" ~ expression ~ "to" ~ expression ~ ("step" ~ expression)? ~ block }
+chant_block  = { "chant" ~ IDENT ~ "from" ~ expression ~ "to" ~ expression ~ ("step" ~ expression)? ~ block }
 recite_block = { "recite" ~ IDENT ~ "from" ~ value ~ block }
 
 loop_block  = { "loop" ~ block }
 condition   = { expression ~ comparator ~ expression }
 comparator  = { ">=" | "<=" | "==" | "!=" | ">" | "<" }
-value       = { string | number | boolean | list | map | cast | IDENT }
+value       = { string | number | boolean | list | map | method_call | call | IDENT }
 expression  = { term ~ (add_op ~ term)* }
 term        = { factor ~ (mult_op ~ factor)* }
 factor      = { value | "(" ~ expression ~ ")" }
 add_op      = { "+" | "-" }
 mult_op     = { "*" | "/" | "%" }
 
-conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression ~ ";" }
-incant      =  { "incant" ~ expression ~ ";" }
-curse       =  { "curse" ~ string ~ ";"}
-evoke       =  { "evoke" ~ string ~ ";"}
-bestow      =  { "bestow" ~ expression ~ ";"}
-yield_stmt  =  { "yield" ~ expression ~ ";"}
+conjure     =  { "conjure" ~ IDENT ~ "=" ~ expression ~ ";"? }
+incant      =  { "incant" ~ expression ~ ";"? }
+curse       =  { "curse" ~ string ~ ";"? }
+summon      =  { "summon" ~ expression ~ ";"? }
+evoke       =  { "evoke" ~ string ~ ";"? }
+bestow      =  { "bestow" ~ expression ~ ";"? }
+yield_stmt  =  { "yield" ~ expression ~ ";"? }
+dispel      =  { "dispel" ~ ";"? }
+portal      =  { "portal" ~ ";"? }
 
 IDENT       = @{ (ASCII_ALPHANUMERIC | "_")+ }
 string      = @{ "\"" ~ string_char* ~ "\"" }
@@ -46,6 +53,6 @@ escape_seq  = @{ "\\" ~ ("\"" | "\\" | "n" | "t" | "r" | "0" | "'") }
 number      = @{ "-"? ~ DIGIT+ ~ ("." ~ DIGIT+)? }
 list        = @{ "[" ~ (value ~ ("," ~ value)*)? ~ "]" }
 map         = @{ "{" ~ (IDENT ~ ":" ~ value ~ ("," ~ IDENT ~ ":" ~ value)*)? ~ "}" }
+method_call = { (IDENT | string) ~ "." ~ IDENT ~ "(" ~ arg_list? ~ ")" }
 DIGIT       = _{ '0'..'9' }
 boolean     = @{ "true" | "false" }
-

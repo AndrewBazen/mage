@@ -1,7 +1,7 @@
 pub mod repl {
-    use crate::Rule;
-    use crate::interpreter::{ExprValue, interpret};
-    use crate::parser::MageParser;
+    use mage_core::Rule;
+    use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
+    use mage_core::parser::MageParser;
     use crate::syntax;
     use pest::Parser;
     use rustyline::Helper;
@@ -346,7 +346,7 @@ pub mod repl {
         }
 
         let mut scope: HashMap<String, ExprValue> = HashMap::new();
-        let mut functions = HashMap::new();
+        let mut functions: HashMap<String, FunctionDef> = HashMap::new();
 
         // Setup rustyline with our MageCompleter
         let config = Config::builder().auto_add_history(true).build();

@@ -1,0 +1,18 @@
+[package]
+name = "mage-tui"
+version = "0.1.0"
+edition = "2024"
+description = "Terminal UI shell for the Mage scripting language"
+
+[[bin]]
+name = "mage-shell"
+path = "src/main.rs"
+
+[dependencies]
+mage-core = { path = "../mage-core" }
+ratatui = "0.29"
+crossterm = "0.28"
+tokio = { version = "1", features = ["full"] }
+dirs = "5"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

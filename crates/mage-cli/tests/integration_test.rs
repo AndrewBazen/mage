@@ -8,12 +8,12 @@ fn test_hello_mage_script() {
 incant \"Hello, $name!\";\n\
 ##\n# This is a multi-line comment\n# Another line\n##\n\
 incant \"Bye, ${name}!\";\n";
-    let script_path = "tests/tmp_hello.mage";
+    let script_path = "tmp_hello.mage";
     fs::write(script_path, script).unwrap();
 
     // Run the mage interpreter
     let output = Command::new("cargo")
-        .args(["run", "--", script_path])
+        .args(["run", "-p", "mage-cli", "--", script_path])
         .output()
         .expect("failed to execute process");
 

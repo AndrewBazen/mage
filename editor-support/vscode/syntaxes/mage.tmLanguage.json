@@ -29,7 +29,7 @@
       "patterns": [
         {
           "name": "keyword.control.mage",
-          "match": "\\b(scry|morph|lest|chant|from|to|step|recite|channel|enchant|cast|conjure|incant)\\b"
+          "match": "\\b(scry|morph|lest|chant|from|to|step|recite|channel|loop|enchant|cast|conjure|incant|evoke|curse|summon|invoke|seal|bestow|yield|dispel|portal)\\b"
         },
         {
           "name": "keyword.operator.logical.mage",

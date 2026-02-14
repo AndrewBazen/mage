@@ -1,0 +1,50 @@
+{
+  "name": "mage-lang",
+  "displayName": "Mage Language",
+  "description": "Syntax highlighting and snippets for the Mage scripting language",
+  "version": "0.1.0",
+  "publisher": "mage",
+  "icon": "icons/mage64.png",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Themes"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mage",
+        "aliases": ["Mage", "mage"],
+        "extensions": [".mage"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/mage64.png",
+          "dark": "./icons/mage64.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mage",
+        "scopeName": "source.mage",
+        "path": "./syntaxes/mage.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "mage",
+        "path": "./snippets/mage.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "mage-icons",
+        "label": "Mage Icons",
+        "path": "./icons/mage-icon-theme.json"
+      }
+    ]
+  }
+}

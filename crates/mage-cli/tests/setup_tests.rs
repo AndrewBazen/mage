@@ -4,7 +4,7 @@ use std::str;
 #[test]
 fn test_mage_setup_dry_run_executes() {
     let output = Command::new("cargo")
-        .args(["run", "--", "setup", "--dry-run"])
+        .args(["run", "-p", "mage-cli", "--", "setup", "--dry-run"])
         .output()
         .expect("Failed to run mage setup --dry-run");
 
