@@ -82,17 +82,14 @@ pub fn interpret<'i>(
     for pair in pairs {
         if pair.as_rule() == Rule::program {
             for incantation in pair.into_inner() {
-                match match_incantation_with_shell(
+                if let Signal::Error(msg) = match_incantation_with_shell(
                     incantation,
                     scope,
                     functions,
                     shell_override,
                     output,
                 ) {
-                    Signal::Error(msg) => {
-                        return Err(InterpreterError::Curse(msg));
-                    }
-                    _ => {}
+                    return Err(InterpreterError::Curse(msg));
                 }
             }
         }
@@ -447,9 +444,8 @@ fn handle_channel_block<'i>(
         iteration_count += 1;
 
         if iteration_count > 10 {
-            output.eprintln(
-                "Channel loop exceeded 10 iterations, breaking to prevent infinite loop",
-            );
+            output
+                .eprintln("Channel loop exceeded 10 iterations, breaking to prevent infinite loop");
             break;
         }
 
@@ -801,8 +797,7 @@ fn evaluate_function_call(
         }
 
         for stmt in func.body.clone() {
-            if let Signal::Return(val) =
-                match_incantation(stmt, &mut func_scope, functions, output)
+            if let Signal::Return(val) = match_incantation(stmt, &mut func_scope, functions, output)
             {
                 return val;
             }
@@ -903,9 +898,7 @@ fn evaluate_factor(
                     }
                 }
                 Rule::call => evaluate_function_call(inner_value, scope, functions, output),
-                Rule::method_call => {
-                    evaluate_method_call(inner_value, scope, functions, output)
-                }
+                Rule::method_call => evaluate_method_call(inner_value, scope, functions, output),
                 Rule::imbue => evaluate_imbue(inner_value, scope, None, output),
                 _ => ExprValue::Number(0.0),
             }
@@ -1245,7 +1238,7 @@ fn call_string_method(
         "replace" => {
             if args.len() >= 2 {
                 if let (Some(ExprValue::String(from)), Some(ExprValue::String(to))) =
-                    (args.get(0), args.get(1))
+                    (args.first(), args.get(1))
                 {
                     ExprValue::String(s.replace(from.as_str(), to.as_str()))
                 } else {
