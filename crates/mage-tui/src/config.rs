@@ -61,12 +61,11 @@ impl TuiConfig {
         // Try to load from ~/.config/mage/tui.toml
         let config_path = dirs::config_dir().map(|p| p.join("mage").join("tui.toml"));
 
-        if let Some(path) = config_path {
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                if let Ok(config) = toml::from_str(&content) {
-                    return config;
-                }
-            }
+        if let Some(path) = config_path
+            && let Ok(content) = std::fs::read_to_string(&path)
+            && let Ok(config) = toml::from_str(&content)
+        {
+            return config;
         }
 
         Self::default()
