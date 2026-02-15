@@ -3,7 +3,7 @@ mod setup;
 mod syntax;
 
 use clap::{Parser, Subcommand};
-use mage_core::{run, format};
+use mage_core::{format, run};
 use std::fs;
 use std::path::Path;
 

@@ -15,7 +15,9 @@ impl std::fmt::Display for InterpreterError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             InterpreterError::Curse(msg) => write!(f, "CURSE: {}", msg),
-            InterpreterError::CommandFailed(code) => write!(f, "Command failed with exit code {}", code),
+            InterpreterError::CommandFailed(code) => {
+                write!(f, "Command failed with exit code {}", code)
+            }
             InterpreterError::CommandError(msg) => write!(f, "Command error: {}", msg),
         }
     }

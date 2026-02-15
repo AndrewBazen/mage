@@ -1,9 +1,9 @@
 pub mod repl {
+    use crate::syntax;
     use mage_core::Rule;
     use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
     use mage_core::output::OutputCollector;
     use mage_core::parser::MageParser;
-    use crate::syntax;
     use pest::Parser;
     use rustyline::Helper;
     use rustyline::completion::{Completer, Pair};
@@ -376,7 +376,13 @@ pub mod repl {
 
                         match MageParser::parse(Rule::program, input) {
                             Ok(pairs) => {
-                                if let Err(e) = interpret(pairs, shell_override, &mut scope, &mut functions, &mut output) {
+                                if let Err(e) = interpret(
+                                    pairs,
+                                    shell_override,
+                                    &mut scope,
+                                    &mut functions,
+                                    &mut output,
+                                ) {
                                     eprintln!("Error: {}", e);
                                 }
                             }

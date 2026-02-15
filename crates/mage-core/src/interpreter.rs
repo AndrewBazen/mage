@@ -1,5 +1,5 @@
+use crate::output::{InterpreterError, OutputCollector};
 use crate::{Rule, builtins};
-use crate::output::{OutputCollector, InterpreterError};
 use pest::iterators::Pairs;
 use std::collections::HashMap;
 
@@ -73,7 +73,13 @@ pub fn interpret<'i>(
     for pair in pairs {
         if pair.as_rule() == Rule::program {
             for incantation in pair.into_inner() {
-                match_incantation_with_shell(incantation, scope, functions, shell_override, output)?;
+                match_incantation_with_shell(
+                    incantation,
+                    scope,
+                    functions,
+                    shell_override,
+                    output,
+                )?;
             }
         }
     }
@@ -352,7 +358,8 @@ fn handle_channel_block<'i>(
         iteration_count += 1;
 
         if iteration_count > 10 {
-            output.eprintln("Channel loop exceeded 10 iterations, breaking to prevent infinite loop");
+            output
+                .eprintln("Channel loop exceeded 10 iterations, breaking to prevent infinite loop");
             break;
         }
 
@@ -532,13 +539,11 @@ fn handle_cast<'i>(
     if builtins::is_builtin(name) {
         let string_args: Vec<String> = args.iter().map(|a| a.to_display_string()).collect();
         match builtins::call_builtin(name, string_args, output) {
-            Ok(result) => {
-                match result {
-                    builtins::BuiltinValue::None => {}
-                    builtins::BuiltinValue::Boolean(true) => {}
-                    _ => output.println(&format!("{}", result)),
-                }
-            }
+            Ok(result) => match result {
+                builtins::BuiltinValue::None => {}
+                builtins::BuiltinValue::Boolean(true) => {}
+                _ => output.println(&format!("{}", result)),
+            },
             Err(e) => output.eprintln(&format!("Error calling {}: {}", name, e)),
         }
     } else if let Some(func) = functions.get(name) {
@@ -756,7 +761,12 @@ fn evaluate_factor(
 
 // ─── Operators ───────────────────────────────────────────────────────
 
-fn apply_add_op(left: ExprValue, op: &str, right: ExprValue, output: &mut OutputCollector) -> ExprValue {
+fn apply_add_op(
+    left: ExprValue,
+    op: &str,
+    right: ExprValue,
+    output: &mut OutputCollector,
+) -> ExprValue {
     match (&left, &right) {
         (ExprValue::Number(l), ExprValue::Number(r)) => match op {
             "+" => ExprValue::Number(l + r),
@@ -788,7 +798,12 @@ fn apply_add_op(left: ExprValue, op: &str, right: ExprValue, output: &mut Output
     }
 }
 
-fn apply_mult_op(left: ExprValue, op: &str, right: ExprValue, output: &mut OutputCollector) -> ExprValue {
+fn apply_mult_op(
+    left: ExprValue,
+    op: &str,
+    right: ExprValue,
+    output: &mut OutputCollector,
+) -> ExprValue {
     match (&left, &right) {
         (ExprValue::Number(l), ExprValue::Number(r)) => match op {
             "*" => ExprValue::Number(l * r),
@@ -871,7 +886,10 @@ fn expr_to_i32(val: &ExprValue, label: &str, output: &mut OutputCollector) -> Op
     match val {
         ExprValue::Number(n) => Some(*n as i32),
         ExprValue::String(s) => s.parse().ok().or_else(|| {
-            output.eprintln(&format!("{} value must be a number, got string: {}", label, s));
+            output.eprintln(&format!(
+                "{} value must be a number, got string: {}",
+                label, s
+            ));
             None
         }),
         ExprValue::List(l) => Some(l.len() as i32),

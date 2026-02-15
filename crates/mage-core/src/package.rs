@@ -250,9 +250,12 @@ impl PackageResolver {
             PackageSource::Registry(manager) => {
                 if manager == "auto" {
                     // Use system package manager
-                    let _ =
-                        crate::builtins::call_builtin("install_package", vec![name.to_string()], &mut crate::output::OutputCollector::direct())
-                            .map_err(|e| format!("Failed to install {}: {}", name, e))?;
+                    let _ = crate::builtins::call_builtin(
+                        "install_package",
+                        vec![name.to_string()],
+                        &mut crate::output::OutputCollector::direct(),
+                    )
+                    .map_err(|e| format!("Failed to install {}: {}", name, e))?;
                 } else {
                     // Use specific package manager
                     self.install_with_manager(name, manager)?;

@@ -16,9 +16,9 @@ use crate::output::OutputCollector;
 use pest::Parser;
 use pest::iterators::Pairs;
 
-pub use crate::parser::{MageParser, Rule};
 pub use crate::interpreter::{ExprValue as Value, FunctionDef};
-pub use crate::output::{OutputCollector as Output, InterpreterError};
+pub use crate::output::{InterpreterError, OutputCollector as Output};
+pub use crate::parser::{MageParser, Rule};
 
 /// Extract shell override from script source (e.g., `#!shell:bash`)
 fn extract_shell_override(source: &str) -> Option<String> {
@@ -45,10 +45,14 @@ pub fn run(source: &str, cli_shell: Option<&str>) -> Result<(), String> {
     let mut output = OutputCollector::direct();
     let pairs = MageParser::parse(crate::Rule::program, source);
     match pairs {
-        Ok(pairs) => {
-            interpret(pairs, shell_override.as_deref(), &mut scope, &mut functions, &mut output)
-                .map_err(|e| format!("{}", e))
-        }
+        Ok(pairs) => interpret(
+            pairs,
+            shell_override.as_deref(),
+            &mut scope,
+            &mut functions,
+            &mut output,
+        )
+        .map_err(|e| format!("{}", e)),
         Err(err) => Err(format!("Parse error: {}", err)),
     }
 }

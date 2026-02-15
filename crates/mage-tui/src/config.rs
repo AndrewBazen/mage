@@ -59,8 +59,7 @@ impl Default for TuiConfig {
 impl TuiConfig {
     pub fn load() -> Self {
         // Try to load from ~/.config/mage/tui.toml
-        let config_path = dirs::config_dir()
-            .map(|p| p.join("mage").join("tui.toml"));
+        let config_path = dirs::config_dir().map(|p| p.join("mage").join("tui.toml"));
 
         if let Some(path) = config_path {
             if let Ok(content) = std::fs::read_to_string(&path) {
@@ -86,7 +85,6 @@ impl TuiConfig {
         let content = toml::to_string_pretty(self)
             .map_err(|e| format!("Failed to serialize config: {}", e))?;
 
-        std::fs::write(config_path, content)
-            .map_err(|e| format!("Failed to write config: {}", e))
+        std::fs::write(config_path, content).map_err(|e| format!("Failed to write config: {}", e))
     }
 }

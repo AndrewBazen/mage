@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::sync::mpsc;
 
+use mage_core::Rule;
 use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
 use mage_core::output::OutputCollector;
 use mage_core::parser::MageParser;
-use mage_core::Rule;
 use pest::Parser;
 
 #[derive(Debug, Clone)]
@@ -17,10 +17,7 @@ pub struct CommandResult {
 
 /// Runs on a dedicated std::thread. Owns scope and functions (non-Send types stay here).
 /// Receives commands via cmd_rx, sends results via result_tx.
-pub fn interpreter_thread(
-    cmd_rx: mpsc::Receiver<String>,
-    result_tx: mpsc::Sender<CommandResult>,
-) {
+pub fn interpreter_thread(cmd_rx: mpsc::Receiver<String>, result_tx: mpsc::Sender<CommandResult>) {
     let mut scope: HashMap<String, ExprValue> = HashMap::new();
     let mut functions: HashMap<String, FunctionDef<'static>> = HashMap::new();
 
@@ -30,15 +27,13 @@ pub fn interpreter_thread(
 
         let mut collector = OutputCollector::buffered();
         let success = match MageParser::parse(Rule::program, input) {
-            Ok(pairs) => {
-                match interpret(pairs, None, &mut scope, &mut functions, &mut collector) {
-                    Ok(()) => true,
-                    Err(e) => {
-                        collector.eprintln(&format!("{}", e));
-                        false
-                    }
+            Ok(pairs) => match interpret(pairs, None, &mut scope, &mut functions, &mut collector) {
+                Ok(()) => true,
+                Err(e) => {
+                    collector.eprintln(&format!("{}", e));
+                    false
                 }
-            }
+            },
             Err(e) => {
                 collector.eprintln(&format!("Parse error: {}", e));
                 false

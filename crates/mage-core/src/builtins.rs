@@ -25,7 +25,11 @@ impl std::fmt::Display for BuiltinValue {
     }
 }
 
-pub fn call_builtin(name: &str, args: Vec<String>, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
+pub fn call_builtin(
+    name: &str,
+    args: Vec<String>,
+    output: &mut OutputCollector,
+) -> Result<BuiltinValue, String> {
     match name {
         // System Information
         "platform" => Ok(BuiltinValue::String(detect_platform())),
@@ -594,7 +598,11 @@ fn search_for_packages(package: &str, manager: &str) -> Vec<(String, String)> {
     }
 }
 
-fn select_package_interactively(package: &str, manager: &str, output: &mut OutputCollector) -> Option<String> {
+fn select_package_interactively(
+    package: &str,
+    manager: &str,
+    output: &mut OutputCollector,
+) -> Option<String> {
     let matches = search_for_packages(package, manager);
 
     if matches.is_empty() {
@@ -609,7 +617,9 @@ fn select_package_interactively(package: &str, manager: &str, output: &mut Outpu
     if output.is_buffered() {
         output.println(&format!(
             "Found {} packages matching '{}', using first match: {}",
-            matches.len(), package, matches[0].1
+            matches.len(),
+            package,
+            matches[0].1
         ));
         return Some(matches[0].1.clone());
     }
@@ -627,7 +637,10 @@ fn select_package_interactively(package: &str, manager: &str, output: &mut Outpu
     }
 
     output.println("");
-    output.print(&format!("Choose a package (1-{}, or 0 to cancel): ", matches.len()));
+    output.print(&format!(
+        "Choose a package (1-{}, or 0 to cancel): ",
+        matches.len()
+    ));
 
     use std::io::{self, Write};
     io::stdout().flush().ok();
@@ -1002,7 +1015,12 @@ fn package_init(name: &str, output: &mut OutputCollector) -> Result<BuiltinValue
     Ok(BuiltinValue::Boolean(true))
 }
 
-fn package_add(package: &str, version: &str, is_dev: bool, output: &mut OutputCollector) -> Result<BuiltinValue, String> {
+fn package_add(
+    package: &str,
+    version: &str,
+    is_dev: bool,
+    output: &mut OutputCollector,
+) -> Result<BuiltinValue, String> {
     use std::env;
     let current_dir =
         env::current_dir().map_err(|e| format!("Failed to get current directory: {}", e))?;

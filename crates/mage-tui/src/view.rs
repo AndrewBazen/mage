@@ -1,7 +1,7 @@
-use iced::widget::{column, container, row, scrollable, text, text_input, Column, Row};
+use iced::widget::{Column, Row, column, container, row, scrollable, text, text_input};
 use iced::{Color, Element, Font, Length};
 
-use crate::app::{input_id, output_scroll_id, MageShell, Message, Mode, OutputKind};
+use crate::app::{MageShell, Message, Mode, OutputKind, input_id, output_scroll_id};
 
 pub fn view(shell: &MageShell) -> Element<'_, Message> {
     column![
@@ -168,16 +168,8 @@ fn view_keybindings_bar(shell: &MageShell) -> Element<'_, Message> {
             ("PgUp/Dn", "scroll"),
             ("Enter", "run"),
         ],
-        Mode::Insert => vec![
-            ("Esc", "normal"),
-            ("Enter", "run"),
-            ("Tab", "complete"),
-        ],
-        Mode::CommandPalette => vec![
-            ("Esc", "close"),
-            ("Enter", "select"),
-            ("Tab", "next"),
-        ],
+        Mode::Insert => vec![("Esc", "normal"), ("Enter", "run"), ("Tab", "complete")],
+        Mode::CommandPalette => vec![("Esc", "close"), ("Enter", "select"), ("Tab", "next")],
         _ => vec![("Esc", "close")],
     };
 

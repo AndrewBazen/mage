@@ -2,8 +2,8 @@ use std::sync::mpsc;
 
 use iced::event;
 use iced::keyboard;
-use iced::widget::operation::{self, AbsoluteOffset};
 use iced::widget::Id;
+use iced::widget::operation::{self, AbsoluteOffset};
 use iced::{Element, Event, Subscription, Task, Theme};
 
 use crate::config::TuiConfig;
@@ -256,8 +256,7 @@ impl MageShell {
                 if !self.context_items.is_empty() {
                     let item = &self.context_items[self.context_index];
                     self.input = format!("{} ", item.label);
-                    self.context_index =
-                        (self.context_index + 1) % self.context_items.len();
+                    self.context_index = (self.context_index + 1) % self.context_items.len();
                     self.update_context();
                     operation::move_cursor_to_end(input_id())
                 } else {
@@ -315,16 +314,10 @@ impl MageShell {
                 Task::none()
             }
             Message::ScrollUp => {
-                operation::scroll_by(
-                    output_scroll_id(),
-                    AbsoluteOffset { x: 0.0, y: -60.0 },
-                )
+                operation::scroll_by(output_scroll_id(), AbsoluteOffset { x: 0.0, y: -60.0 })
             }
             Message::ScrollDown => {
-                operation::scroll_by(
-                    output_scroll_id(),
-                    AbsoluteOffset { x: 0.0, y: 60.0 },
-                )
+                operation::scroll_by(output_scroll_id(), AbsoluteOffset { x: 0.0, y: 60.0 })
             }
             Message::ContextItemSelected(i) => {
                 if i < self.context_items.len() {
@@ -348,10 +341,7 @@ impl MageShell {
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
-        Subscription::batch([
-            keyboard_subscription(),
-            interpreter_subscription(),
-        ])
+        Subscription::batch([keyboard_subscription(), interpreter_subscription()])
     }
 
     fn update_context(&mut self) {
@@ -423,17 +413,14 @@ fn handle_event(
     _window: iced::window::Id,
 ) -> Option<Message> {
     match event {
-        Event::Keyboard(keyboard::Event::KeyPressed {
-            key, modifiers, ..
-        }) => handle_key_press(key, modifiers),
+        Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) => {
+            handle_key_press(key, modifiers)
+        }
         _ => None,
     }
 }
 
-fn handle_key_press(
-    key: keyboard::Key,
-    modifiers: keyboard::Modifiers,
-) -> Option<Message> {
+fn handle_key_press(key: keyboard::Key, modifiers: keyboard::Modifiers) -> Option<Message> {
     use keyboard::key::Named;
 
     if modifiers.control() {
@@ -466,34 +453,37 @@ fn keyboard_subscription() -> Subscription<Message> {
 }
 
 fn interpreter_stream() -> impl iced::futures::Stream<Item = Message> {
-    iced::stream::channel(100, async move |mut output: iced::futures::channel::mpsc::Sender<Message>| {
-        let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<String>();
-        let (result_tx, result_rx) = std::sync::mpsc::channel::<CommandResult>();
+    iced::stream::channel(
+        100,
+        async move |mut output: iced::futures::channel::mpsc::Sender<Message>| {
+            let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<String>();
+            let (result_tx, result_rx) = std::sync::mpsc::channel::<CommandResult>();
 
-        // Send the command sender back to the app
-        use iced::futures::SinkExt;
-        let _ = output.send(Message::InterpreterReady(cmd_tx)).await;
+            // Send the command sender back to the app
+            use iced::futures::SinkExt;
+            let _ = output.send(Message::InterpreterReady(cmd_tx)).await;
 
-        // Spawn the interpreter thread (owns scope + functions, non-Send types stay here)
-        std::thread::spawn(move || {
-            crate::interpreter::interpreter_thread(cmd_rx, result_tx);
-        });
+            // Spawn the interpreter thread (owns scope + functions, non-Send types stay here)
+            std::thread::spawn(move || {
+                crate::interpreter::interpreter_thread(cmd_rx, result_tx);
+            });
 
-        // Poll for results from the interpreter thread
-        loop {
-            match result_rx.try_recv() {
-                Ok(result) => {
-                    let _ = output.send(Message::CommandComplete(result)).await;
-                }
-                Err(std::sync::mpsc::TryRecvError::Empty) => {
-                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                }
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    break;
+            // Poll for results from the interpreter thread
+            loop {
+                match result_rx.try_recv() {
+                    Ok(result) => {
+                        let _ = output.send(Message::CommandComplete(result)).await;
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => {
+                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                        break;
+                    }
                 }
             }
-        }
-    })
+        },
+    )
 }
 
 fn interpreter_subscription() -> Subscription<Message> {
