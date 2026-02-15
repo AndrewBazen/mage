@@ -10,8 +10,7 @@
   },
   "categories": [
     "Programming Languages",
-    "Snippets",
-    "Themes"
+    "Snippets"
   ],
   "contributes": {
     "languages": [
@@ -21,8 +20,8 @@
         "extensions": [".mage"],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./icons/mage64.png",
-          "dark": "./icons/mage64.png"
+          "light": "./icons/mage.svg",
+          "dark": "./icons/mage.svg"
         }
       }
     ],
@@ -37,13 +36,6 @@
       {
         "language": "mage",
         "path": "./snippets/mage.json"
-      }
-    ],
-    "iconThemes": [
-      {
-        "id": "mage-icons",
-        "label": "Mage Icons",
-        "path": "./icons/mage-icon-theme.json"
       }
     ]
   }
