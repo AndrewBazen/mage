@@ -1,0 +1,12 @@
+# Debug channel test
+conjure test_var = 0
+incant "Initial value: $test_var"
+
+conjure test_var = test_var + 1
+incant "After increment: $test_var"
+
+scry test_var < 10 {
+    incant "test_var is less than 10: $test_var"
+} lest {
+    incant "test_var is NOT less than 10: $test_var"
+} 

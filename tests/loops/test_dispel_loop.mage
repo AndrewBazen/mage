@@ -1,0 +1,6 @@
+chant i from 0 to 10 {
+    scry i == 5 {
+        dispel
+    }
+    incant i
+}

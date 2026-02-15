@@ -1,0 +1,13 @@
+# Debug channel loop specifically
+conjure test_var = 0
+incant "Starting with test_var = $test_var"
+
+channel test_var < 3 {
+    incant "Loop iteration - test_var at start: $test_var"
+    incant "Calculating test_var + 1:"
+    incant (test_var + 1)
+    incant "Now setting test_var = test_var + 1"
+    conjure test_var = test_var + 1
+    incant "After conjure, test_var is now: $test_var"
+    incant "---"
+} 

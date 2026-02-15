@@ -1,0 +1,13 @@
+# Debug scry-lest
+
+conjure test = "hello"
+
+incant "Before scry block"
+
+scry test == "hello" {
+    incant "✅ SCRY: This should print"
+} lest {
+    incant "❌ LEST: This should NOT print"
+}
+
+incant "After scry block" 

@@ -1,0 +1,6 @@
+enchant double(x) {
+    bestow x * 2;
+}
+
+conjure result = cast double(5)
+incant result

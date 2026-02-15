@@ -1,0 +1,3 @@
+conjure x = 0
+channel x < 2 { incant x
+conjure x = 1 } 
