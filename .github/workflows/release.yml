@@ -25,85 +25,86 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.get_version.outputs.version }} \
-            --title "Mage ${{ steps.get_version.outputs.version }}" \
-            --notes "$(cat << 'EOF'
-            # Mage ${{ steps.get_version.outputs.version }}
-            
-            🎉 **New Release of Mage Language**
-            
-            ## 🚀 Features
-            - Cross-platform scripting and automation
-            - Function calls in expressions and assignments
-            - Mixed-type string concatenation and arithmetic
-            - Package workflow management
-            - Interactive REPL
-            - Comprehensive built-in functions
-            
-            ## 📦 Installation
-            
-            ### Download CLI Binary
-            Download the appropriate CLI binary for your platform below.
+          VERSION="${{ steps.get_version.outputs.version }}"
+          cat > release-notes.md << EOF
+          # Mage ${VERSION}
 
-            ### Download Mage Shell GUI
-            - **macOS** (Universal): `MageShell-${{ steps.get_version.outputs.version }}-universal-macos.dmg`
-            - **Linux** (x86_64): `MageShell-${{ steps.get_version.outputs.version }}-x86_64.AppImage`
-            - **Windows** (x86_64): `MageShell-${{ steps.get_version.outputs.version }}-x86_64-windows.zip`
-            
-            ### Build from Source
-            ```bash
-            git clone https://github.com/AndrewBazen/mage.git
-            cd mage
-            cargo build --release
-            ```
-            
-            ### Package Managers
-            
-            #### Windows (Scoop)
-            ```powershell
-            # Coming soon
-            ```
-            
-            #### macOS (Homebrew)
-            ```bash
-            # Coming soon
-            ```
-            
-            #### Linux
-            ```bash
-            # Download and install the binary
-            curl -L https://github.com/AndrewBazen/mage/releases/download/${{ steps.get_version.outputs.version }}/mage-linux-x86_64.tar.gz | tar xz
-            sudo mv mage /usr/local/bin/
-            ```
-            
-            ## 🎯 Quick Start
-            
-            ```bash
-            # Initialize a new project
-            mage -c 'cast package_init("my-project")'
-            
-            # Add dependencies
-            mage -c 'cast package_add("git", "latest", false)'
-            
-            # Try new function call features
-            mage -c 'incant "Platform: " + cast platform()'
-            mage -c 'incant "Running on: " + cast platform()'
-            
-            # Run a script
-            mage examples/system-info.mage
-            ```
-            
-            ## 📚 Documentation
-            
-            - [Package Workflows](examples/PACKAGE-WORKFLOWS.md)
-            - [Language Examples](examples/)
-            - [README](README.md)
-            
-            ---
-            
-            **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${{ steps.get_version.outputs.version }}
-            EOF
-            )"
+          **New Release of Mage Language**
+
+          ## Features
+          - Cross-platform scripting and automation
+          - Function calls in expressions and assignments
+          - Mixed-type string concatenation and arithmetic
+          - Package workflow management
+          - Interactive REPL
+          - Comprehensive built-in functions
+
+          ## Installation
+
+          ### Download CLI Binary
+          Download the appropriate CLI binary for your platform below.
+
+          ### Download Mage Shell GUI
+          - **macOS** (Universal): \`MageShell-${VERSION}-universal-macos.dmg\`
+          - **Linux** (x86_64): \`MageShell-${VERSION}-x86_64.AppImage\`
+          - **Windows** (x86_64): \`MageShell-${VERSION}-x86_64-windows.zip\`
+
+          ### Build from Source
+          \`\`\`bash
+          git clone https://github.com/AndrewBazen/mage.git
+          cd mage
+          cargo build --release
+          \`\`\`
+
+          ### Package Managers
+
+          #### Windows (Scoop)
+          \`\`\`powershell
+          # Coming soon
+          \`\`\`
+
+          #### macOS (Homebrew)
+          \`\`\`bash
+          # Coming soon
+          \`\`\`
+
+          #### Linux
+          \`\`\`bash
+          # Download and install the binary
+          curl -L https://github.com/AndrewBazen/mage/releases/download/${VERSION}/mage-linux-x86_64.tar.gz | tar xz
+          sudo mv mage /usr/local/bin/
+          \`\`\`
+
+          ## Quick Start
+
+          \`\`\`bash
+          # Initialize a new project
+          mage -c 'cast package_init("my-project")'
+
+          # Add dependencies
+          mage -c 'cast package_add("git", "latest", false)'
+
+          # Try new function call features
+          mage -c 'incant "Platform: " + cast platform()'
+          mage -c 'incant "Running on: " + cast platform()'
+
+          # Run a script
+          mage examples/system-info.mage
+          \`\`\`
+
+          ## Documentation
+
+          - [Package Workflows](examples/PACKAGE-WORKFLOWS.md)
+          - [Language Examples](examples/)
+          - [README](README.md)
+
+          ---
+
+          **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${VERSION}
+          EOF
+          gh release create "${VERSION}" \
+            --title "Mage ${VERSION}" \
+            --notes-file release-notes.md
 
   build-release:
     name: Build Release
