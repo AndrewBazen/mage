@@ -190,6 +190,7 @@ jobs:
           Get-FileHash ${{ matrix.asset_name }}.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -FilePath ${{ matrix.asset_name }}.zip.sha256 -Encoding ascii
 
       - name: Upload release assets
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
