@@ -25,80 +25,86 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.get_version.outputs.version }} \
-            --title "Mage ${{ steps.get_version.outputs.version }}" \
-            --notes "$(cat << 'EOF'
-            # Mage ${{ steps.get_version.outputs.version }}
-            
-            🎉 **New Release of Mage Language**
-            
-            ## 🚀 Features
-            - Cross-platform scripting and automation
-            - Function calls in expressions and assignments
-            - Mixed-type string concatenation and arithmetic
-            - Package workflow management
-            - Interactive REPL
-            - Comprehensive built-in functions
-            
-            ## 📦 Installation
-            
-            ### Download Binary
-            Download the appropriate binary for your platform below.
-            
-            ### Build from Source
-            ```bash
-            git clone https://github.com/AndrewBazen/mage.git
-            cd mage
-            cargo build --release
-            ```
-            
-            ### Package Managers
-            
-            #### Windows (Scoop)
-            ```powershell
-            # Coming soon
-            ```
-            
-            #### macOS (Homebrew)
-            ```bash
-            # Coming soon
-            ```
-            
-            #### Linux
-            ```bash
-            # Download and install the binary
-            curl -L https://github.com/AndrewBazen/mage/releases/download/${{ steps.get_version.outputs.version }}/mage-linux-x86_64.tar.gz | tar xz
-            sudo mv mage /usr/local/bin/
-            ```
-            
-            ## 🎯 Quick Start
-            
-            ```bash
-            # Initialize a new project
-            mage -c 'cast package_init("my-project")'
-            
-            # Add dependencies
-            mage -c 'cast package_add("git", "latest", false)'
-            
-            # Try new function call features
-            mage -c 'incant "Platform: " + cast platform()'
-            mage -c 'incant "Running on: " + cast platform()'
-            
-            # Run a script
-            mage examples/system-info.mage
-            ```
-            
-            ## 📚 Documentation
-            
-            - [Package Workflows](examples/PACKAGE-WORKFLOWS.md)
-            - [Language Examples](examples/)
-            - [README](README.md)
-            
-            ---
-            
-            **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${{ steps.get_version.outputs.version }}
-            EOF
-            )"
+          VERSION="${{ steps.get_version.outputs.version }}"
+          cat > release-notes.md << EOF
+          # Mage ${VERSION}
+
+          **New Release of Mage Language**
+
+          ## Features
+          - Cross-platform scripting and automation
+          - Function calls in expressions and assignments
+          - Mixed-type string concatenation and arithmetic
+          - Package workflow management
+          - Interactive REPL
+          - Comprehensive built-in functions
+
+          ## Installation
+
+          ### Download CLI Binary
+          Download the appropriate CLI binary for your platform below.
+
+          ### Download Mage Shell GUI
+          - **macOS** (Universal): \`MageShell-${VERSION}-universal-macos.dmg\`
+          - **Linux** (x86_64): \`MageShell-${VERSION}-x86_64.AppImage\`
+          - **Windows** (x86_64): \`MageShell-${VERSION}-x86_64-windows.zip\`
+
+          ### Build from Source
+          \`\`\`bash
+          git clone https://github.com/AndrewBazen/mage.git
+          cd mage
+          cargo build --release
+          \`\`\`
+
+          ### Package Managers
+
+          #### Windows (Scoop)
+          \`\`\`powershell
+          # Coming soon
+          \`\`\`
+
+          #### macOS (Homebrew)
+          \`\`\`bash
+          # Coming soon
+          \`\`\`
+
+          #### Linux
+          \`\`\`bash
+          # Download and install the binary
+          curl -L https://github.com/AndrewBazen/mage/releases/download/${VERSION}/mage-linux-x86_64.tar.gz | tar xz
+          sudo mv mage /usr/local/bin/
+          \`\`\`
+
+          ## Quick Start
+
+          \`\`\`bash
+          # Initialize a new project
+          mage -c 'cast package_init("my-project")'
+
+          # Add dependencies
+          mage -c 'cast package_add("git", "latest", false)'
+
+          # Try new function call features
+          mage -c 'incant "Platform: " + cast platform()'
+          mage -c 'incant "Running on: " + cast platform()'
+
+          # Run a script
+          mage examples/system-info.mage
+          \`\`\`
+
+          ## Documentation
+
+          - [Package Workflows](examples/PACKAGE-WORKFLOWS.md)
+          - [Language Examples](examples/)
+          - [README](README.md)
+
+          ---
+
+          **Full Changelog**: https://github.com/AndrewBazen/mage/compare/v0.0.0...${VERSION}
+          EOF
+          gh release create "${VERSION}" \
+            --title "Mage ${VERSION}" \
+            --notes-file release-notes.md
 
   build-release:
     name: Build Release
@@ -137,6 +143,9 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
+
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
 
       - name: Install musl tools (Linux musl only)
         if: matrix.target == 'x86_64-unknown-linux-musl'
@@ -181,6 +190,7 @@ jobs:
           Get-FileHash ${{ matrix.asset_name }}.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -FilePath ${{ matrix.asset_name }}.zip.sha256 -Encoding ascii
 
       - name: Upload release assets
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -227,7 +237,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           # Test basic functionality
-          echo 'incant "Release test successful!"' | ./mage -
+          ./mage -c 'incant "Release test successful!"'
 
           # Test version
           ./mage --version
@@ -240,30 +250,260 @@ jobs:
           mkdir test-release
           cd test-release
           ../mage -c 'cast package_init("release-test")'
-          [ -f mage.toml ] && echo "✅ Package workflow working"
+          [ -f mage.toml ] && echo "Package workflow working"
 
       - name: Test binary functionality (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
           # Test basic functionality
-          echo 'incant "Release test successful!"' | .\mage.exe -
+          ./mage.exe -c 'incant "Release test successful!"'
 
           # Test version
-          .\mage.exe --version
+          ./mage.exe --version
 
           # Test system detection with new function call syntax
-          .\mage.exe -c 'incant "Platform: " + cast platform()'
-          .\mage.exe -c 'incant "Architecture: " + cast architecture()'
+          ./mage.exe -c 'incant "Platform: " + cast platform()'
+          ./mage.exe -c 'incant "Architecture: " + cast architecture()'
 
           # Test package workflow
           mkdir test-release
           cd test-release
-          ..\mage.exe -c 'cast package_init("release-test")'
-          if (Test-Path "mage.toml") { echo "✅ Package workflow working" }
+          ../mage.exe -c 'cast package_init("release-test")'
+          [ -f mage.toml ] && echo "Package workflow working"
+
+  build-gui-macos:
+    name: Build GUI (macOS DMG)
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Add cross-compile targets
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: macos-gui-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            macos-gui-cargo-
+
+      - name: Build mage-shell (aarch64)
+        run: cargo build --release --target aarch64-apple-darwin -p mage-tui
+
+      - name: Build mage-shell (x86_64)
+        run: cargo build --release --target x86_64-apple-darwin -p mage-tui
+
+      - name: Create universal binary
+        run: |
+          mkdir -p universal
+          lipo -create \
+            target/aarch64-apple-darwin/release/mage-shell \
+            target/x86_64-apple-darwin/release/mage-shell \
+            -output universal/mage-shell
+          strip universal/mage-shell
+
+      - name: Create .icns icon
+        run: |
+          mkdir -p mage-shell.iconset
+          # Generate required icon sizes from 64px source
+          sips -z 16 16   assets/icons/mage64.png --out mage-shell.iconset/icon_16x16.png
+          sips -z 32 32   assets/icons/mage64.png --out mage-shell.iconset/icon_16x16@2x.png
+          sips -z 32 32   assets/icons/mage64.png --out mage-shell.iconset/icon_32x32.png
+          sips -z 64 64   assets/icons/mage64.png --out mage-shell.iconset/icon_32x32@2x.png
+          sips -z 128 128 assets/icons/mage64.png --out mage-shell.iconset/icon_128x128.png
+          sips -z 256 256 assets/icons/mage64.png --out mage-shell.iconset/icon_128x128@2x.png
+          sips -z 256 256 assets/icons/mage64.png --out mage-shell.iconset/icon_256x256.png
+          sips -z 512 512 assets/icons/mage64.png --out mage-shell.iconset/icon_256x256@2x.png
+          sips -z 512 512 assets/icons/mage64.png --out mage-shell.iconset/icon_512x512.png
+          sips -z 512 512 assets/icons/mage64.png --out mage-shell.iconset/icon_512x512@2x.png
+          iconutil -c icns mage-shell.iconset -o mage-shell.icns
+
+      - name: Assemble .app bundle
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          VERSION_NUM="${VERSION#v}"
+
+          mkdir -p "MageShell.app/Contents/MacOS"
+          mkdir -p "MageShell.app/Contents/Resources"
+
+          cp universal/mage-shell "MageShell.app/Contents/MacOS/mage-shell"
+          cp mage-shell.icns "MageShell.app/Contents/Resources/mage-shell.icns"
+
+          sed "s/__VERSION__/${VERSION_NUM}/g" packaging/macos/Info.plist.template \
+            > "MageShell.app/Contents/Info.plist"
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          VERSION="${{ needs.create-release.outputs.version }}"
+
+          create-dmg \
+            --volname "Mage Shell" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "MageShell.app" 175 190 \
+            --app-drop-link 425 190 \
+            --no-internet-enable \
+            "MageShell-${VERSION}-universal-macos.dmg" \
+            "MageShell.app"
+
+      - name: Create checksum
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          shasum -a 256 "MageShell-${VERSION}-universal-macos.dmg" \
+            > "MageShell-${VERSION}-universal-macos.dmg.sha256"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          gh release upload "${VERSION}" \
+            "MageShell-${VERSION}-universal-macos.dmg" \
+            "MageShell-${VERSION}-universal-macos.dmg.sha256" \
+            --clobber
+
+  build-gui-linux:
+    name: Build GUI (Linux AppImage)
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libvulkan-dev \
+            libfuse2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: linux-gui-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            linux-gui-cargo-
+
+      - name: Build mage-shell
+        run: cargo build --release -p mage-tui
+
+      - name: Download appimagetool
+        run: |
+          curl -Lo appimagetool \
+            "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+
+      - name: Assemble AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/icons/hicolor/64x64/apps
+          mkdir -p AppDir/usr/share/applications
+
+          cp target/release/mage-shell AppDir/usr/bin/mage-shell
+          strip AppDir/usr/bin/mage-shell
+          cp assets/icons/mage64.png AppDir/usr/share/icons/hicolor/64x64/apps/mage-shell.png
+          cp assets/icons/mage64.png AppDir/mage-shell.png
+          cp packaging/linux/mage-shell.desktop AppDir/mage-shell.desktop
+          cp packaging/linux/AppRun AppDir/AppRun
+          chmod +x AppDir/AppRun
+
+      - name: Build AppImage
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          ARCH=x86_64 ./appimagetool AppDir "MageShell-${VERSION}-x86_64.AppImage"
+
+      - name: Create checksum
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          sha256sum "MageShell-${VERSION}-x86_64.AppImage" \
+            > "MageShell-${VERSION}-x86_64.AppImage.sha256"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          gh release upload "${VERSION}" \
+            "MageShell-${VERSION}-x86_64.AppImage" \
+            "MageShell-${VERSION}-x86_64.AppImage.sha256" \
+            --clobber
+
+  build-gui-windows:
+    name: Build GUI (Windows)
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: windows-gui-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            windows-gui-cargo-
+
+      - name: Build mage-shell
+        run: cargo build --release -p mage-tui
+
+      - name: Create zip archive
+        run: |
+          $VERSION = "${{ needs.create-release.outputs.version }}"
+          mkdir release-gui
+          cp target/release/mage-shell.exe release-gui/mage-shell.exe
+          cd release-gui
+          7z a "../MageShell-${VERSION}-x86_64-windows.zip" mage-shell.exe
+          cd ..
+          Get-FileHash "MageShell-${VERSION}-x86_64-windows.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -FilePath "MageShell-${VERSION}-x86_64-windows.zip.sha256" -Encoding ascii
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $VERSION = "${{ needs.create-release.outputs.version }}"
+          gh release upload "${VERSION}" "MageShell-${VERSION}-x86_64-windows.zip" "MageShell-${VERSION}-x86_64-windows.zip.sha256" --clobber
 
   publish-artifacts:
     name: Publish Artifacts
-    needs: [create-release, build-release, test-release-binaries]
+    needs: [create-release, build-release, test-release-binaries, build-gui-macos, build-gui-linux, build-gui-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -167,10 +167,10 @@ impl PackageResolver {
             visited.insert(name.clone());
 
             // Skip platform-specific packages
-            if let Some(platform) = &dep.platform {
-                if platform != std::env::consts::OS {
-                    continue;
-                }
+            if let Some(platform) = &dep.platform
+                && platform != std::env::consts::OS
+            {
+                continue;
             }
 
             // Resolve package version and source
@@ -233,15 +233,15 @@ impl PackageResolver {
         _lock: &Option<PackageLock>,
     ) -> Result<(), String> {
         // Check if package is platform-specific
-        if let Some(platform) = &dep.platform {
-            if platform != &std::env::consts::OS.to_string() {
-                println!(
-                    "⏭️  Skipping {} (not for platform {})",
-                    name,
-                    std::env::consts::OS
-                );
-                return Ok(());
-            }
+        if let Some(platform) = &dep.platform
+            && platform != &std::env::consts::OS.to_string()
+        {
+            println!(
+                "⏭️  Skipping {} (not for platform {})",
+                name,
+                std::env::consts::OS
+            );
+            return Ok(());
         }
 
         println!("📦 Installing {}...", name);
@@ -250,9 +250,12 @@ impl PackageResolver {
             PackageSource::Registry(manager) => {
                 if manager == "auto" {
                     // Use system package manager
-                    let _ =
-                        crate::builtins::call_builtin("install_package", vec![name.to_string()])
-                            .map_err(|e| format!("Failed to install {}: {}", name, e))?;
+                    let _ = crate::builtins::call_builtin(
+                        "install_package",
+                        vec![name.to_string()],
+                        &mut crate::output::OutputCollector::direct(),
+                    )
+                    .map_err(|e| format!("Failed to install {}: {}", name, e))?;
                 } else {
                     // Use specific package manager
                     self.install_with_manager(name, manager)?;
@@ -395,6 +398,7 @@ impl PackageResolver {
         let _ = crate::builtins::call_builtin(
             "download",
             vec![url.to_string(), download_path.to_string_lossy().to_string()],
+            &mut crate::output::OutputCollector::direct(),
         )
         .map_err(|e| format!("Failed to download package: {}", e))?;
 

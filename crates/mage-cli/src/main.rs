@@ -1,10 +1,14 @@
+mod bin;
+mod setup;
+mod syntax;
+
 use clap::{Parser, Subcommand};
-use mage::{run, run_repl, syntax};
+use mage_core::{format, run};
 use std::fs;
 use std::path::Path;
 
 #[derive(Parser)]
-#[command(author, version, about = "🧙 The Mage Scripting Language", long_about = None)]
+#[command(author, version, about = "The Mage Scripting Language", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -38,7 +42,7 @@ enum Commands {
         /// Script file to highlight
         file: String,
     },
-    /// format a Mage script
+    /// Format a Mage script
     Format {
         /// Script file to format, or use '-' for stdin
         file: String,
@@ -49,7 +53,7 @@ enum Commands {
     },
     Setup {
         #[command(flatten)]
-        options: mage::setup::SetupOptions,
+        options: setup::SetupOptions,
     },
 }
 
@@ -61,8 +65,8 @@ fn main() {
             run_script(file, cli.shell.as_deref());
         }
         Some(Commands::Repl {}) => {
-            if let Err(e) = run_repl(cli.shell.as_deref()) {
-                eprintln!("❌ {}", e);
+            if let Err(e) = bin::repl::run_repl(cli.shell.as_deref()) {
+                eprintln!("{}", e);
                 std::process::exit(1);
             }
         }
@@ -70,8 +74,8 @@ fn main() {
             format_script(file, *inplace);
         }
         Some(Commands::Setup { options }) => {
-            if let Err(e) = mage::setup::setup_from_cli(options) {
-                eprintln!("❌ {}", e);
+            if let Err(e) = setup::setup_from_cli(options) {
+                eprintln!("{}", e);
                 std::process::exit(1);
             }
         }
@@ -91,8 +95,8 @@ fn main() {
                 run_script(&script, cli.shell.as_deref());
             } else {
                 // No subcommand and no script, start REPL by default
-                if let Err(e) = run_repl(cli.shell.as_deref()) {
-                    eprintln!("❌ {}", e);
+                if let Err(e) = bin::repl::run_repl(cli.shell.as_deref()) {
+                    eprintln!("{}", e);
                     std::process::exit(1);
                 }
             }
@@ -104,20 +108,20 @@ fn run_script(path: &str, shell: Option<&str>) {
     let code = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(e) => {
-            eprintln!("📜 Failed to read spellbook: {}", e);
+            eprintln!("Failed to read spellbook: {}", e);
             std::process::exit(1);
         }
     };
 
     if let Err(e) = run(&code, shell) {
-        eprintln!("❌ {}", e);
+        eprintln!("{}", e);
         std::process::exit(1);
     }
 }
 
 fn run_inline_command(code: &str, shell: Option<&str>) {
     if let Err(e) = run(code, shell) {
-        eprintln!("❌ {}", e);
+        eprintln!("{}", e);
         std::process::exit(1);
     }
 }
@@ -126,30 +130,25 @@ fn highlight_script(path: &str) {
     let code = match fs::read_to_string(path) {
         Ok(content) => content,
         Err(e) => {
-            eprintln!("📜 Failed to read spellbook: {}", e);
+            eprintln!("Failed to read spellbook: {}", e);
             std::process::exit(1);
         }
     };
 
-    // Check if tree-sitter is available
     if syntax::is_tree_sitter_available() {
         match syntax::highlight_html(&code) {
             Ok(html) => {
-                // Save the HTML to a file
                 let output_path = format!("{}.html", path);
                 match fs::write(&output_path, html) {
-                    Ok(_) => println!("✨ Highlighted HTML saved to {}", output_path),
-                    Err(e) => eprintln!("❌ Failed to write HTML: {}", e),
+                    Ok(_) => println!("Highlighted HTML saved to {}", output_path),
+                    Err(e) => eprintln!("Failed to write HTML: {}", e),
                 }
             }
-            Err(e) => eprintln!("❌ Failed to highlight: {}", e),
+            Err(e) => eprintln!("Failed to highlight: {}", e),
         }
     } else {
-        println!("🔍 Tree-sitter syntax highlighting is not yet available.");
-        println!(
-            "📝 When tree-sitter support is added, this command will generate HTML with syntax highlighting."
-        );
-        println!("💻 For now, you can use the colored REPL with basic syntax highlighting:");
+        println!("Tree-sitter syntax highlighting is not yet available.");
+        println!("For now, you can use the colored REPL with basic syntax highlighting:");
         println!("   mage repl");
     }
 }
@@ -167,17 +166,17 @@ fn format_script(path: &str, inplace: bool) {
         match fs::read_to_string(path) {
             Ok(content) => content,
             Err(e) => {
-                eprintln!("📜 Failed to read script: {}", e);
+                eprintln!("Failed to read script: {}", e);
                 std::process::exit(1);
             }
         }
     };
 
-    match mage::format(&input) {
+    match format(&input) {
         Ok(output) => {
             if inplace && path != "-" {
                 if let Err(e) = fs::write(path, output) {
-                    eprintln!("❌ Failed to overwrite file: {}", e);
+                    eprintln!("Failed to overwrite file: {}", e);
                     std::process::exit(1);
                 }
             } else {
@@ -185,7 +184,7 @@ fn format_script(path: &str, inplace: bool) {
             }
         }
         Err(e) => {
-            eprintln!("❌ Failed to overwrite file: {}", e);
+            eprintln!("Failed to format: {}", e);
             std::process::exit(1);
         }
     }
@@ -195,7 +194,7 @@ fn init_config() {
     let config_path = Path::new(".mageconfig");
 
     if config_path.exists() {
-        println!("⚠️ .mageconfig already exists in the current directory");
+        println!(".mageconfig already exists in the current directory");
         return;
     }
 
@@ -210,7 +209,7 @@ fn init_config() {
 "#;
 
     match fs::write(config_path, config_content) {
-        Ok(_) => println!("✨ Created .mageconfig in the current directory"),
-        Err(e) => eprintln!("❌ Failed to create .mageconfig: {}", e),
+        Ok(_) => println!("Created .mageconfig in the current directory"),
+        Err(e) => eprintln!("Failed to create .mageconfig: {}", e),
     }
 }

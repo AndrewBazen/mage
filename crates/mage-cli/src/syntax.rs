@@ -80,12 +80,6 @@ pub fn highlight_html(source: &str) -> Result<String, Box<dyn std::error::Error>
     Ok(String::from_utf8(renderer.html)?)
 }
 
-pub fn get_ast_string(source: &str) -> String {
-    parse(source)
-        .map(|tree| tree.root_node().to_sexp().to_string())
-        .unwrap_or_else(|| "Failed to parse".to_string())
-}
-
 #[derive(Default)]
 pub struct TerminalColors {
     color_map: HashMap<&'static str, &'static str>,

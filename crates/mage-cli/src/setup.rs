@@ -31,10 +31,6 @@ pub fn setup_from_cli(options: &SetupOptions) -> io::Result<()> {
     setup_with_dry_run(options.dry_run)
 }
 
-pub fn setup() -> io::Result<()> {
-    setup_with_dry_run(false)
-}
-
 pub fn setup_with_dry_run(dry_run: bool) -> io::Result<()> {
     println!(
         "🧙 Running Mage setup{}...",

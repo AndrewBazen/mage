@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Mage Shell
+Comment=GUI shell for the Mage scripting language
+Exec=mage-shell
+Icon=mage-shell
+Categories=Development;IDE;
+Terminal=false
+StartupWMClass=mage-shell

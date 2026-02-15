@@ -1,0 +1,22 @@
+[package]
+name = "mage-cli"
+version = "0.1.0"
+edition = "2024"
+description = "Command-line interface and REPL for the Mage scripting language"
+
+[[bin]]
+name = "mage"
+path = "src/main.rs"
+
+[dependencies]
+mage-core = { path = "../mage-core" }
+clap = { version = "4.4", features = ["derive"] }
+rustyline = "15"
+tree-sitter = "0.25.4"
+tree-sitter-highlight = "0.25.4"
+pest = "2.7"
+dirs = "5"
+serde_json = "1"
+
+[build-dependencies]
+cc = "1.0"

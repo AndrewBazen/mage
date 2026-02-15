@@ -170,5 +170,72 @@
       "${0:// Your code here}"
     ],
     "description": "Mage script header template"
+  },
+  "Try-Catch": {
+    "prefix": "invoke",
+    "body": [
+      "invoke {",
+      "    ${1:// code that might fail}",
+      "} seal (${2:err}) {",
+      "    incant \"Error: \\$${2:err}\"",
+      "}"
+    ],
+    "description": "Try-catch block with invoke-seal"
+  },
+  "While Loop": {
+    "prefix": "channel",
+    "body": [
+      "channel ${1:condition} {",
+      "    ${2:// loop body}",
+      "}"
+    ],
+    "description": "While loop with channel"
+  },
+  "Infinite Loop": {
+    "prefix": "loop",
+    "body": [
+      "loop {",
+      "    ${1:// loop body}",
+      "    scry ${2:exit_condition} {",
+      "        dispel",
+      "    }",
+      "}"
+    ],
+    "description": "Infinite loop with loop"
+  },
+  "Shell Command": {
+    "prefix": "evoke",
+    "body": [
+      "evoke \"${1:command}\""
+    ],
+    "description": "Execute shell command with evoke"
+  },
+  "Throw Error": {
+    "prefix": "summon",
+    "body": [
+      "summon \"${1:error message}\""
+    ],
+    "description": "Throw an error with summon"
+  },
+  "Return Value": {
+    "prefix": "bestow",
+    "body": [
+      "bestow ${1:value}"
+    ],
+    "description": "Return a value with bestow"
+  },
+  "Break Loop": {
+    "prefix": "dispel",
+    "body": [
+      "dispel"
+    ],
+    "description": "Break out of loop with dispel"
+  },
+  "Continue Loop": {
+    "prefix": "portal",
+    "body": [
+      "portal"
+    ],
+    "description": "Continue to next iteration with portal"
   }
 } 

@@ -1,8 +1,9 @@
 pub mod repl {
-    use crate::Rule;
-    use crate::interpreter::{ExprValue, interpret};
-    use crate::parser::MageParser;
     use crate::syntax;
+    use mage_core::Rule;
+    use mage_core::interpreter::{ExprValue, FunctionDef, interpret};
+    use mage_core::output::OutputCollector;
+    use mage_core::parser::MageParser;
     use pest::Parser;
     use rustyline::Helper;
     use rustyline::completion::{Completer, Pair};
@@ -62,156 +63,146 @@ pub mod repl {
     impl Highlighter for MageCompleter {
         fn highlight<'l>(&self, line: &'l str, _pos: usize) -> Cow<'l, str> {
             // Try to use tree-sitter highlighting if available
-            if self.tree_sitter_available {
-                if let Some(tree) = syntax::parse(line) {
-                    // A very simple tree-sitter based highlighter
-                    let mut result = String::new();
-                    let colors = &self.syntax_colors;
+            if self.tree_sitter_available
+                && let Some(tree) = syntax::parse(line)
+            {
+                // A very simple tree-sitter based highlighter
+                let mut result = String::new();
+                let colors = &self.syntax_colors;
 
-                    // Function to process a node and add it to the result with highlighting
-                    fn highlight_node(
-                        node: &tree_sitter::Node,
-                        source: &str,
-                        result: &mut String,
-                        colors: &syntax::TerminalColors,
-                    ) {
-                        let node_text = &source[node.start_byte()..node.end_byte()];
+                // Function to process a node and add it to the result with highlighting
+                fn highlight_node(
+                    node: &tree_sitter::Node,
+                    source: &str,
+                    result: &mut String,
+                    colors: &syntax::TerminalColors,
+                ) {
+                    let node_text = &source[node.start_byte()..node.end_byte()];
 
-                        // Apply colors based on node type
-                        match node.kind() {
-                            "variable_declaration" => {
-                                // Find the keyword and identifier
-                                if let Some(keyword) = node.child(0) {
-                                    result.push_str(colors.get_color("keyword"));
-                                    result.push_str(
-                                        &source[keyword.start_byte()..keyword.end_byte()],
-                                    );
+                    // Apply colors based on node type
+                    match node.kind() {
+                        "variable_declaration" => {
+                            // Find the keyword and identifier
+                            if let Some(keyword) = node.child(0) {
+                                result.push_str(colors.get_color("keyword"));
+                                result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                result.push_str(syntax::TerminalColors::reset());
+                                result.push(' ');
+
+                                if let Some(name) = node.child_by_field_name("name") {
+                                    result.push_str(colors.get_color("variable.declaration"));
+                                    result.push_str(&source[name.start_byte()..name.end_byte()]);
                                     result.push_str(syntax::TerminalColors::reset());
-                                    result.push(' ');
 
-                                    if let Some(name) = node.child_by_field_name("name") {
-                                        result.push_str(colors.get_color("variable.declaration"));
-                                        result
-                                            .push_str(&source[name.start_byte()..name.end_byte()]);
-                                        result.push_str(syntax::TerminalColors::reset());
-
-                                        // Add the rest of the node
-                                        for i in 2..node.child_count() {
-                                            if let Some(child) = node.child(i) {
-                                                // Skip operator for now
-                                                if child.kind() == "=" {
-                                                    result.push_str(" = ");
-                                                } else {
-                                                    highlight_node(&child, source, result, colors);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            "string" => {
-                                result.push_str(colors.get_color("string"));
-                                result.push_str(node_text);
-                                result.push_str(syntax::TerminalColors::reset());
-                            }
-                            "number" => {
-                                result.push_str(colors.get_color("number"));
-                                result.push_str(node_text);
-                                result.push_str(syntax::TerminalColors::reset());
-                            }
-                            "comment" | "multiline_comment" => {
-                                result.push_str(colors.get_color("comment"));
-                                result.push_str(node_text);
-                                result.push_str(syntax::TerminalColors::reset());
-                            }
-                            "function_declaration" | "function_call" => {
-                                if let Some(keyword) = node.child(0) {
-                                    result.push_str(colors.get_color("keyword"));
-                                    result.push_str(
-                                        &source[keyword.start_byte()..keyword.end_byte()],
-                                    );
-                                    result.push_str(syntax::TerminalColors::reset());
-                                    result.push(' ');
-
-                                    if let Some(name) = node.child_by_field_name("name") {
-                                        result.push_str(colors.get_color("function"));
-                                        result
-                                            .push_str(&source[name.start_byte()..name.end_byte()]);
-                                        result.push_str(syntax::TerminalColors::reset());
-                                    }
-
-                                    // Add the rest without colorization
+                                    // Add the rest of the node
                                     for i in 2..node.child_count() {
                                         if let Some(child) = node.child(i) {
-                                            if child.kind() == "string"
-                                                || child.kind() == "number"
-                                                || child.kind() == "comment"
-                                                || child.kind() == "multiline_comment"
-                                            {
-                                                highlight_node(&child, source, result, colors);
+                                            // Skip operator for now
+                                            if child.kind() == "=" {
+                                                result.push_str(" = ");
                                             } else {
-                                                result.push_str(
-                                                    &source[child.start_byte()..child.end_byte()],
-                                                );
+                                                highlight_node(&child, source, result, colors);
                                             }
-                                        }
-                                    }
-                                }
-                            }
-                            "output" | "error" | "command" => {
-                                if let Some(keyword) = node.child(0) {
-                                    result.push_str(colors.get_color("keyword"));
-                                    result.push_str(
-                                        &source[keyword.start_byte()..keyword.end_byte()],
-                                    );
-                                    result.push_str(syntax::TerminalColors::reset());
-                                    result.push(' ');
-
-                                    // Add the rest with appropriate colors
-                                    for i in 1..node.child_count() {
-                                        if let Some(child) = node.child(i) {
-                                            highlight_node(&child, source, result, colors);
-                                        }
-                                    }
-                                }
-                            }
-                            "if_statement" | "loop_statement" => {
-                                if let Some(keyword) = node.child(0) {
-                                    result.push_str(colors.get_color("keyword"));
-                                    result.push_str(
-                                        &source[keyword.start_byte()..keyword.end_byte()],
-                                    );
-                                    result.push_str(syntax::TerminalColors::reset());
-
-                                    // Add the rest with appropriate colors
-                                    for i in 1..node.child_count() {
-                                        if let Some(child) = node.child(i) {
-                                            highlight_node(&child, source, result, colors);
-                                        }
-                                    }
-                                }
-                            }
-                            _ => {
-                                // Process children for complex nodes
-                                if node.child_count() > 0 {
-                                    result.push_str(node_text);
-                                } else {
-                                    for i in 0..node.child_count() {
-                                        if let Some(child) = node.child(i) {
-                                            highlight_node(&child, source, result, colors);
                                         }
                                     }
                                 }
                             }
                         }
-                    }
+                        "string" => {
+                            result.push_str(colors.get_color("string"));
+                            result.push_str(node_text);
+                            result.push_str(syntax::TerminalColors::reset());
+                        }
+                        "number" => {
+                            result.push_str(colors.get_color("number"));
+                            result.push_str(node_text);
+                            result.push_str(syntax::TerminalColors::reset());
+                        }
+                        "comment" | "multiline_comment" => {
+                            result.push_str(colors.get_color("comment"));
+                            result.push_str(node_text);
+                            result.push_str(syntax::TerminalColors::reset());
+                        }
+                        "function_declaration" | "function_call" => {
+                            if let Some(keyword) = node.child(0) {
+                                result.push_str(colors.get_color("keyword"));
+                                result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                result.push_str(syntax::TerminalColors::reset());
+                                result.push(' ');
 
-                    let root = tree.root_node();
-                    highlight_node(&root, line, &mut result, colors);
+                                if let Some(name) = node.child_by_field_name("name") {
+                                    result.push_str(colors.get_color("function"));
+                                    result.push_str(&source[name.start_byte()..name.end_byte()]);
+                                    result.push_str(syntax::TerminalColors::reset());
+                                }
 
-                    if result.is_empty() {
-                        return Cow::Owned(result);
+                                // Add the rest without colorization
+                                for i in 2..node.child_count() {
+                                    if let Some(child) = node.child(i) {
+                                        if child.kind() == "string"
+                                            || child.kind() == "number"
+                                            || child.kind() == "comment"
+                                            || child.kind() == "multiline_comment"
+                                        {
+                                            highlight_node(&child, source, result, colors);
+                                        } else {
+                                            result.push_str(
+                                                &source[child.start_byte()..child.end_byte()],
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        "output" | "error" | "command" => {
+                            if let Some(keyword) = node.child(0) {
+                                result.push_str(colors.get_color("keyword"));
+                                result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                result.push_str(syntax::TerminalColors::reset());
+                                result.push(' ');
+
+                                // Add the rest with appropriate colors
+                                for i in 1..node.child_count() {
+                                    if let Some(child) = node.child(i) {
+                                        highlight_node(&child, source, result, colors);
+                                    }
+                                }
+                            }
+                        }
+                        "if_statement" | "loop_statement" => {
+                            if let Some(keyword) = node.child(0) {
+                                result.push_str(colors.get_color("keyword"));
+                                result.push_str(&source[keyword.start_byte()..keyword.end_byte()]);
+                                result.push_str(syntax::TerminalColors::reset());
+
+                                // Add the rest with appropriate colors
+                                for i in 1..node.child_count() {
+                                    if let Some(child) = node.child(i) {
+                                        highlight_node(&child, source, result, colors);
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            // Process children for complex nodes
+                            if node.child_count() > 0 {
+                                result.push_str(node_text);
+                            } else {
+                                for i in 0..node.child_count() {
+                                    if let Some(child) = node.child(i) {
+                                        highlight_node(&child, source, result, colors);
+                                    }
+                                }
+                            }
+                        }
                     }
+                }
+
+                let root = tree.root_node();
+                highlight_node(&root, line, &mut result, colors);
+
+                if result.is_empty() {
+                    return Cow::Owned(result);
                 }
             }
 
@@ -227,7 +218,6 @@ pub mod repl {
             let mut buffer = String::new();
             let mut in_string = false;
             let mut in_comment = false;
-            
 
             for (i, c) in line.chars().enumerate() {
                 if in_comment {
@@ -357,7 +347,8 @@ pub mod repl {
         }
 
         let mut scope: HashMap<String, ExprValue> = HashMap::new();
-        let mut functions = HashMap::new();
+        let mut functions: HashMap<String, FunctionDef> = HashMap::new();
+        let mut output = OutputCollector::direct();
 
         // Setup rustyline with our MageCompleter
         let config = Config::builder().auto_add_history(true).build();
@@ -385,7 +376,15 @@ pub mod repl {
 
                         match MageParser::parse(Rule::program, input) {
                             Ok(pairs) => {
-                                interpret(pairs, shell_override, &mut scope, &mut functions)
+                                if let Err(e) = interpret(
+                                    pairs,
+                                    shell_override,
+                                    &mut scope,
+                                    &mut functions,
+                                    &mut output,
+                                ) {
+                                    eprintln!("Error: {}", e);
+                                }
                             }
                             Err(e) => eprintln!("Error: {}", e),
                         }

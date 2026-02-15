@@ -1,0 +1,5 @@
+conjure x = 1
+scry x == 1 {
+    incant "first";
+    incant "second";
+} 
