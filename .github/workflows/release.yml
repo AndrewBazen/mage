@@ -237,7 +237,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           # Test basic functionality
-          echo 'incant "Release test successful!"' | ./mage -
+          ./mage -c 'incant "Release test successful!"'
 
           # Test version
           ./mage --version
@@ -250,26 +250,27 @@ jobs:
           mkdir test-release
           cd test-release
           ../mage -c 'cast package_init("release-test")'
-          [ -f mage.toml ] && echo "✅ Package workflow working"
+          [ -f mage.toml ] && echo "Package workflow working"
 
       - name: Test binary functionality (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
           # Test basic functionality
-          echo 'incant "Release test successful!"' | .\mage.exe -
+          ./mage.exe -c 'incant "Release test successful!"'
 
           # Test version
-          .\mage.exe --version
+          ./mage.exe --version
 
           # Test system detection with new function call syntax
-          .\mage.exe -c 'incant "Platform: " + cast platform()'
-          .\mage.exe -c 'incant "Architecture: " + cast architecture()'
+          ./mage.exe -c 'incant "Platform: " + cast platform()'
+          ./mage.exe -c 'incant "Architecture: " + cast architecture()'
 
           # Test package workflow
           mkdir test-release
           cd test-release
-          ..\mage.exe -c 'cast package_init("release-test")'
-          if (Test-Path "mage.toml") { echo "✅ Package workflow working" }
+          ../mage.exe -c 'cast package_init("release-test")'
+          [ -f mage.toml ] && echo "Package workflow working"
 
   build-gui-macos:
     name: Build GUI (macOS DMG)
